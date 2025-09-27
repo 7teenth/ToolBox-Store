@@ -1,11 +1,14 @@
-// pages/product/[id].tsx
 import { GetServerSideProps } from "next";
+import Head from "next/head";
 import { supabase } from "../../lib/supabaseClient";
 import { Product } from "../../types/product";
 import { Layout } from "../../components/Layout";
 import { Reviews, Review } from "../../components/Reviews";
 import { useState } from "react";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
+import { toast } from "react-hot-toast";
+import { getImageUrl } from "@/lib/getImageUrl";
 
 interface ProductPageProps {
   product: Product | null;
@@ -18,9 +21,13 @@ export default function ProductPage({
   reviews,
   similarProducts,
 }: ProductPageProps) {
-  const [selectedImage, setSelectedImage] = useState(
-    product ? `/images/${product.image_url}` : "/images/default-product.png"
-  );
+  const { addItem } = useCart();
+
+  const mainImage = getImageUrl(product?.image_url || "defaults/product.png");
+  const hoverImage = product?.image_hover && getImageUrl(product.image_hover);
+  const images = [mainImage, hoverImage].filter(Boolean);
+
+  const [selectedImage, setSelectedImage] = useState(mainImage);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<
     "description" | "specs" | "reviews"
@@ -37,25 +44,54 @@ export default function ProductPage({
     );
   }
 
-  const images = [
-    `/images/${product.image_url}`,
-    product.image_hover ? `/images/${product.image_hover}` : null,
-  ].filter(Boolean) as string[];
-
   const stars = Array.from({ length: 5 }, (_, i) => (
     <span
       key={i}
-      className={i < product.rating ? "text-yellow-400" : "text-gray-300"}
+      className={
+        i < (product.rating || 0) ? "text-yellow-400" : "text-gray-300"
+      }
     >
       ★
     </span>
   ));
 
-  const increment = () => setQuantity((q) => Math.min(q + 1, product.stock));
+  const increment = () =>
+    setQuantity((q) => Math.min(q + 1, product.stock || 1));
   const decrement = () => setQuantity((q) => Math.max(q - 1, 1));
+
+  const handleAddToCart = () => {
+    addItem({
+      id: String(product.id),
+      name: product.name,
+      price: product.price,
+      image: getImageUrl(product?.image_url || "defaults/product.png"),
+      quantity,
+    });
+
+    toast.success("Додано до кошика!", {
+      icon: "🛒",
+      style: {
+        borderRadius: "8px",
+        background: "#333",
+        color: "#fff",
+      },
+    });
+  };
 
   return (
     <Layout>
+      <Head>
+        <title>{product.name} – ToolBox Store</title>
+        <meta
+          name="description"
+          content={
+            product.short_description?.trim()
+              ? product.short_description
+              : `Купити ${product.name} за ${product.price} грн. Доступно на ToolBox Store.`
+          }
+        />
+      </Head>
+
       {/* Верхняя часть: фото + инфо */}
       <div className="max-w-6xl mx-auto py-12 px-4 flex flex-col md:flex-row gap-8">
         {/* Галерея */}
@@ -74,7 +110,7 @@ export default function ProductPage({
                 className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
                   selectedImage === img ? "border-blue-600" : "border-gray-300"
                 }`}
-                onClick={() => setSelectedImage(img)}
+                onClick={() => setSelectedImage(img ?? mainImage)}
               />
             ))}
           </div>
@@ -83,7 +119,12 @@ export default function ProductPage({
         {/* Инфо */}
         <div className="flex-1 flex flex-col justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+            {product.tool_types?.name && (
+              <p className="text-sm text-gray-500 mb-4">
+                Тип інструменту: <strong>{product.tool_types.name}</strong>
+              </p>
+            )}
             <div className="flex items-center mb-4 gap-2">
               {stars}
               <span className="text-sm text-gray-500">
@@ -92,7 +133,7 @@ export default function ProductPage({
             </div>
             <p className="text-gray-700 mb-4">{product.short_description}</p>
             <span className="text-3xl font-bold text-green-600">
-              ${product.price}
+              {product.price} грн
             </span>
             <p className="mt-2 text-sm text-gray-500">
               В наличии: {product.stock > 0 ? product.stock : "Нет"}
@@ -117,18 +158,28 @@ export default function ProductPage({
           </div>
 
           {/* Кнопки */}
-          <div className="mt-6 flex gap-4">
+          <div className="mt-6 flex gap-4 flex-col sm:flex-row">
             <button
               className={`flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg transition-colors ${
                 product.stock === 0 ? "opacity-50 cursor-not-allowed" : ""
               }`}
               disabled={product.stock === 0}
+              onClick={handleAddToCart}
             >
               В корзину
             </button>
-            <button className="px-4 py-3 rounded-lg border border-gray-300 hover:bg-gray-100">
-              В избранное
-            </button>
+
+            <Link href="/cart">
+              <button
+                className={`flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-lg transition-colors ${
+                  product.stock === 0 ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={product.stock === 0}
+                onClick={handleAddToCart}
+              >
+                Оформить заказ
+              </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -136,40 +187,31 @@ export default function ProductPage({
       {/* Табы */}
       <div className="max-w-6xl mx-auto px-4 mt-12">
         <div className="flex border-b mb-6">
-          <button
-            onClick={() => setActiveTab("description")}
-            className={`px-4 py-2 ${
-              activeTab === "description"
-                ? "border-b-2 border-blue-600 text-blue-600 font-semibold"
-                : "text-gray-500"
-            }`}
-          >
-            Описание
-          </button>
-          <button
-            onClick={() => setActiveTab("specs")}
-            className={`px-4 py-2 ${
-              activeTab === "specs"
-                ? "border-b-2 border-blue-600 text-blue-600 font-semibold"
-                : "text-gray-500"
-            }`}
-          >
-            Характеристики
-          </button>
-          <button
-            onClick={() => setActiveTab("reviews")}
-            className={`px-4 py-2 ${
-              activeTab === "reviews"
-                ? "border-b-2 border-blue-600 text-blue-600 font-semibold"
-                : "text-gray-500"
-            }`}
-          >
-            Отзывы
-          </button>
+          {["description", "specs", "reviews"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as typeof activeTab)}
+              className={`px-4 py-2 ${
+                activeTab === tab
+                  ? "border-b-2 border-blue-600 text-blue-600 font-semibold"
+                  : "text-gray-500"
+              }`}
+            >
+              {tab === "description"
+                ? "Описание"
+                : tab === "specs"
+                ? "Характеристики"
+                : "Отзывы"}
+            </button>
+          ))}
         </div>
 
         {activeTab === "description" && (
-          <p className="text-gray-700">{product.description}</p>
+          <p className="text-gray-700">
+            {product.description?.trim()
+              ? product.description
+              : "Опис товару наразі недоступний."}
+          </p>
         )}
         {activeTab === "specs" && (
           <ul className="list-disc ml-6 text-gray-700">
@@ -189,12 +231,12 @@ export default function ProductPage({
             <Link href={`/product/${prod.id}`} key={prod.id}>
               <div className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition cursor-pointer">
                 <img
-                  src={`/images/${prod.image_url}`}
+                  src={getImageUrl(prod.image_url || "defaults/product.png")}
                   alt={prod.name}
                   className="w-full h-40 object-cover rounded"
                 />
                 <h3 className="mt-2 font-semibold">{prod.name}</h3>
-                <p className="text-green-600 font-bold">${prod.price}</p>
+                <p className="text-green-600 font-bold">{prod.price} грн</p>
               </div>
             </Link>
           ))}
@@ -207,20 +249,26 @@ export default function ProductPage({
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { id } = context.params as { id: string };
 
-  const { data: product } = await supabase
+  const { data: product, error: productError } = await supabase
     .from("products")
-    .select("*")
+    .select("*, tool_types(name)")
     .eq("id", id)
     .single();
 
-  // 🔹 Заглушка: похожие товары (по категории)
-  const { data: similarProducts } = await supabase
+  if (productError) {
+    console.error("❌ Error fetching product:", productError.message);
+  }
+
+  const { data: similarProducts, error: similarError } = await supabase
     .from("products")
-    .select("*")
+    .select("*, tool_types(name)")
     .neq("id", id)
     .limit(4);
 
-  // 🔹 Заглушка: отзывы
+  if (similarError) {
+    console.error("❌ Error fetching similar products:", similarError.message);
+  }
+
   const reviews: Review[] = [
     {
       id: 1,
@@ -247,9 +295,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   return {
     props: {
-      product: product || null,
+      product: product ?? null,
       reviews,
-      similarProducts: similarProducts || [],
+      similarProducts: similarProducts ?? [],
     },
   };
 };

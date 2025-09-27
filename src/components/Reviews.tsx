@@ -5,7 +5,7 @@ export interface Review {
   userName: string;
   rating: number; // 1-5
   comment: string;
-  date: string; // ISO или формат даты
+  date: string; // ISO або формат дати
 }
 
 interface ReviewsProps {
@@ -15,9 +15,7 @@ interface ReviewsProps {
 export const Reviews: React.FC<ReviewsProps> = ({ reviews }) => {
   return (
     <section className="reviews-section mt-12 mb-12 max-w-7xl mx-auto px-4">
-      <h2 className="text-2xl font-bold mb-6 text-center">
-        Отзывы покупателей
-      </h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">Відгуки покупців</h2>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {reviews.map((review) => (
           <div
@@ -41,7 +39,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ reviews }) => {
             </div>
             <div className="mt-4 text-sm text-gray-500 flex justify-between items-center">
               <span className="font-semibold">{review.userName}</span>
-              <span>{new Date(review.date).toLocaleDateString("ru-RU")}</span>
+              <span>{new Date(review.date).toLocaleDateString("uk-UA")}</span>
             </div>
           </div>
         ))}

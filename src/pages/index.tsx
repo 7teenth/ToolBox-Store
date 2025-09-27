@@ -4,21 +4,21 @@ import { Product } from "../types/product";
 import { ProductCard } from "../components/ProductCard";
 import { Layout } from "../components/Layout";
 import { Carousel } from "../components/carousel";
-import { Categories, Category } from "../components/Categories"; // <- импорт типа Category
+import { Categories, Category } from "../components/Categories";
 import { Reviews } from "../components/Reviews";
 
 interface HomeProps {
   popularProducts: Product[];
-  categories: Category[]; // <- добавили категории
+  categories: Category[];
 }
 
 export default function Home({ popularProducts, categories }: HomeProps) {
   return (
     <Layout>
       <Carousel />
-      <section className="popular-section mt-12 mb-12 bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl shadow-md">
+      <section className="popular-section mt-12 mb-12 bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-6 lg:px-8 py-6 rounded-xl shadow-md max-w-7xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 text-center">
-          Популярные товары
+          Популярні товари
         </h2>
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {popularProducts.map((product) => (
@@ -26,70 +26,66 @@ export default function Home({ popularProducts, categories }: HomeProps) {
           ))}
         </div>
       </section>
+
       <Categories categories={categories} />
-      <style jsx>{`
-        .popular-section {
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-        h2 {
-          color: #111;
-        }
-      `}</style>
+
       <Reviews
         reviews={[
           {
             id: 1,
-            userName: "Иван",
+            userName: "Іван",
             rating: 5,
-            comment: "Отличный товар!",
+            comment: "Чудовий товар!",
             date: "2025-09-26",
           },
           {
             id: 2,
-            userName: "Мария",
+            userName: "Марія",
             rating: 4,
-            comment: "Все понравилось, быстро доставили.",
+            comment: "Все сподобалося, швидко доставили.",
             date: "2025-09-25",
           },
           {
             id: 3,
-            userName: "Алексей",
+            userName: "Олексій",
             rating: 5,
             comment: "Рекомендую!",
             date: "2025-09-24",
           },
         ]}
       />
-      ;
     </Layout>
   );
 }
 
 export const getServerSideProps: GetServerSideProps = async () => {
-  const { data: popularProducts } = await supabase
+  const { data: popularProducts, error: productError } = await supabase
     .from("products")
-    .select("*")
-    .order("sales", { ascending: false })
+    .select("*, tool_types(name)")
     .limit(5);
 
-  const { data: categories, error } = await supabase
+  if (productError) {
+    console.error("❌ Error fetching products:", productError.message);
+  }
+
+  const { data: categories, error: categoryError } = await supabase
     .from("categories")
     .select("*");
 
-  // Преобразуем поля категорий
+  if (categoryError) {
+    console.error("❌ Error fetching categories:", categoryError.message);
+  }
+
   const formattedCategories = (categories || []).map((cat) => ({
     id: cat.id,
     name: cat.name,
-    image: cat.image_url, // <- поле image_url из БД
-    slug: cat.slug || "", // если есть slug
+    image_url: cat.image_url,
+    slug: cat.slug || "",
   }));
-
-  console.log("Categories:", formattedCategories, "Error:", error);
 
   return {
     props: {
-      popularProducts: popularProducts || [],
+      popularProducts: popularProducts ?? [],
       categories: formattedCategories,
     },
   };

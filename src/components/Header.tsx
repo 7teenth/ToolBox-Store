@@ -1,8 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { getImageUrl } from "../lib/getImageUrl";
+import { FiShoppingCart, FiBarChart2 } from "react-icons/fi";
+import { useCart } from "@/context/CartContext";
+import { useCompare } from "@/context/CompareContext";
 
 const Header: React.FC = () => {
   const [query, setQuery] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+
+  const { items } = useCart();
+  const { items: compareItems } = useCompare();
+
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const compareCount = compareItems.length;
+
+  useEffect(() => {
+    const url = getImageUrl("logos/logo.png");
+    setLogoUrl(url);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,14 +30,16 @@ const Header: React.FC = () => {
   return (
     <header className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white px-4 py-6 md:py-4 shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-center md:justify-between">
-        {/* Левая часть: логотип + каталог */}
+        {/* Ліва частина: логотип + каталог */}
         <div className="flex items-center justify-start space-x-4 md:space-x-6 mb-4 md:mb-0">
           <Link href="/" className="flex items-center space-x-3">
-            <img
-              src="/images/logo.png"
-              alt="ToolBox"
-              className="h-10 w-10 rounded-full cursor-pointer"
-            />
+            {logoUrl && (
+              <img
+                src={logoUrl}
+                alt="ToolBox"
+                className="h-10 w-10 rounded-full cursor-pointer"
+              />
+            )}
             <h1 className="text-xl font-bold cursor-pointer hover:text-amber-400 transition-colors">
               ToolBox Store
             </h1>
@@ -34,12 +52,12 @@ const Header: React.FC = () => {
           </Link>
         </div>
 
-        {/* Центр: поиск */}
+        {/* Центр: пошук */}
         <div className="flex-1 mx-auto w-full max-w-md mb-4 md:mb-0">
           <form onSubmit={handleSearch} className="relative w-full">
             <input
               type="text"
-              placeholder="Искать товар или категорию..."
+              placeholder="Пошук товару або категорії..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full px-4 py-2 rounded-lg text-black outline-none focus:ring-2 focus:ring-blue-500"
@@ -47,6 +65,7 @@ const Header: React.FC = () => {
             <button
               type="submit"
               className="absolute right-2 top-1/2 transform -translate-y-1/2"
+              aria-label="Пошук"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -66,26 +85,46 @@ const Header: React.FC = () => {
           </form>
         </div>
 
-        {/* Правая часть: телефон + сравнение + корзина (только иконки) */}
-        <div className="flex items-center justify-end space-x-3">
+        {/* Права частина: телефон + порівняння + кошик */}
+        <div className="flex items-center justify-end space-x-3 relative">
+          {/* Телефон */}
           <a
             href="tel:+380990817643"
             className="bg-gray-700 hover:bg-gray-600 transition-colors px-4 py-2 rounded-lg font-medium shadow flex items-center justify-center"
           >
-            <span className="mr-1">📞</span> +38 (099) 081-76-43
+            <span className="mr-1">📞</span>
+            <span className="hidden sm:inline">+38 (099) 081-76-43</span>
           </a>
 
-          {/* Иконка сравнения */}
+          {/* Порівняння */}
           <Link href="/compare">
-            <button className="text-white hover:text-gray-300 transition-colors p-2 rounded-full">
-              ⚖️
+            <button
+              className="relative p-2 rounded-full hover:bg-gray-700 transition"
+              title="Порівняння"
+              aria-label="Порівняння"
+            >
+              <FiBarChart2 className="text-white hover:text-gray-300 h-6 w-6" />
+              {compareCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                  {compareCount}
+                </span>
+              )}
             </button>
           </Link>
 
-          {/* Иконка корзины */}
+          {/* Кошик */}
           <Link href="/cart">
-            <button className="text-white hover:text-gray-300 transition-colors p-2 rounded-full">
-              🛒
+            <button
+              className="relative p-2 rounded-full hover:bg-gray-700 transition"
+              title="Кошик"
+              aria-label="Кошик"
+            >
+              <FiShoppingCart className="text-white hover:text-gray-300 h-6 w-6" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                  {cartCount}
+                </span>
+              )}
             </button>
           </Link>
         </div>

@@ -1,5 +1,5 @@
-// components/Carousel.tsx
 import React, { useState, useEffect } from "react";
+import { getImageUrl } from "../lib/getImageUrl";
 
 interface Slide {
   image: string;
@@ -7,34 +7,56 @@ interface Slide {
   subtitle: string;
 }
 
-const slides: Slide[] = [
+interface RawSlide {
+  imagePath: string;
+  title: string;
+  subtitle: string;
+}
+
+const rawSlides: RawSlide[] = [
   {
-    image: "/images/slide1.jpg",
-    title: "Инструменты для профессионалов",
-    subtitle: "Все, что нужно для вашего мастерства",
+    imagePath: "slides/slide1.jpg",
+    title: "Інструменти для професіоналів",
+    subtitle: "Все, що потрібно для вашої майстерності",
   },
   {
-    image: "/images/slide2.jpg",
-    title: "Надежность и качество",
-    subtitle: "Мы выбираем только проверенные бренды",
+    imagePath: "slides/slide2.jpg",
+    title: "Надійність і якість",
+    subtitle: "Ми обираємо лише перевірені бренди",
   },
   {
-    image: "/images/slide3.jpg",
-    title: "Скидки и акции",
-    subtitle: "Следите за новыми предложениями",
+    imagePath: "slides/slide3.jpg",
+    title: "Знижки та акції",
+    subtitle: "Слідкуйте за новими пропозиціями",
   },
 ];
 
 export const Carousel: React.FC = () => {
   const [current, setCurrent] = useState(0);
+  const [slides, setSlides] = useState<Slide[]>([]);
 
-  // Автопрокрутка каждые 5 секунд
+  // Завантаження зображень із Supabase
+  useEffect(() => {
+    const fetchSlides = async () => {
+      const resolvedSlides: Slide[] = await Promise.all(
+        rawSlides.map(async (slide) => ({
+          title: slide.title,
+          subtitle: slide.subtitle,
+          image: await getImageUrl(slide.imagePath),
+        }))
+      );
+      setSlides(resolvedSlides);
+    };
+    fetchSlides();
+  }, []);
+
+  // Автоперемикання кожні 5 секунд
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [slides]);
 
   return (
     <div className="relative w-full h-96 overflow-hidden">
@@ -45,13 +67,13 @@ export const Carousel: React.FC = () => {
             index === current ? "opacity-100" : "opacity-0"
           }`}
         >
-          {/* Фоновое изображение */}
+          {/* Фонове зображення */}
           <div
             className="w-full h-full bg-center bg-cover"
             style={{ backgroundImage: `url(${slide.image})` }}
           ></div>
 
-          {/* Виньетка */}
+          {/* Вуаль */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
 
           {/* Текст */}
@@ -62,7 +84,7 @@ export const Carousel: React.FC = () => {
         </div>
       ))}
 
-      {/* Навигационные точки */}
+      {/* Навігаційні точки */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {slides.map((_, index) => (
           <button
