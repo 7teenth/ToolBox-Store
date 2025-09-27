@@ -1,0 +1,25 @@
+/* globals.css */
+
+/* Подключение Tailwind — должно быть снаружи body */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Стили для body */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f5f5f5;
+    color: #111;
+    margin: 0;
+    padding: 0;
+}
+
+/* Контейнер для центрирования контента и ограничения ширины */
+.wrapper {
+    max-width: 1200px;
+    /* максимальная ширина */
+    margin: 0 auto;
+    /* центрирование */
+    padding: 0 1rem;
+    /* боковые отступы */
+}
