@@ -15,7 +15,9 @@ export const ProductCard: React.FC<{
     product.image_url || "defaults/default-product.png"
   );
   const hoverImage = getImageUrl(
-    product.image_hover || product.image_url || "defaults/default-product.png"
+    product.hover_image_url ||
+      product.image_url ||
+      "defaults/default-product.png"
   );
 
   const [currentImage, setCurrentImage] = useState(defaultImage);

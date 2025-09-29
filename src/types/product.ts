@@ -5,7 +5,7 @@ export interface Product {
   short_description?: string;
   price: number;
   image_url: string;
-  image_hover?: string;
+  hover_image_url?: string;
   category: string;
   brand?: string;
   stock: number;
