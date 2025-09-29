@@ -1,21 +1,33 @@
 import { GetServerSideProps } from "next";
+import Head from "next/head";
 import { supabase } from "../lib/supabaseClient";
 import { Product } from "../types/product";
 import { ProductCard } from "../components/ProductCard";
 import { Layout } from "../components/Layout";
 import { Carousel } from "../components/carousel";
 import { Categories, Category } from "../components/Categories";
-import { Reviews } from "../components/Reviews";
+import { ReviewList } from "../components/ReviewList";
+import { Review } from "../types/review";
 
 interface HomeProps {
   popularProducts: Product[];
   categories: Category[];
+  featuredReviews: Review[];
 }
 
-export default function Home({ popularProducts, categories }: HomeProps) {
+export default function Home({
+  popularProducts,
+  categories,
+  featuredReviews,
+}: HomeProps) {
   return (
     <Layout>
+      <Head>
+        <title>ToolBox Store – Головна</title>
+      </Head>
+
       <Carousel />
+
       <section className="popular-section mt-12 mb-12 bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-6 lg:px-8 py-6 rounded-xl shadow-md max-w-7xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 text-center">
           Популярні товари
@@ -29,31 +41,12 @@ export default function Home({ popularProducts, categories }: HomeProps) {
 
       <Categories categories={categories} />
 
-      <Reviews
-        reviews={[
-          {
-            id: 1,
-            userName: "Іван",
-            rating: 5,
-            comment: "Чудовий товар!",
-            date: "2025-09-26",
-          },
-          {
-            id: 2,
-            userName: "Марія",
-            rating: 4,
-            comment: "Все сподобалося, швидко доставили.",
-            date: "2025-09-25",
-          },
-          {
-            id: 3,
-            userName: "Олексій",
-            rating: 5,
-            comment: "Рекомендую!",
-            date: "2025-09-24",
-          },
-        ]}
-      />
+      {featuredReviews.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 py-12 space-y-8">
+          <h2 className="text-2xl font-bold text-center">Відгуки покупців</h2>
+          <ReviewList reviews={featuredReviews} />
+        </section>
+      )}
     </Layout>
   );
 }
@@ -76,17 +69,38 @@ export const getServerSideProps: GetServerSideProps = async () => {
     console.error("❌ Error fetching categories:", categoryError.message);
   }
 
-  const formattedCategories = (categories || []).map((cat) => ({
+  const formattedCategories: Category[] = (categories || []).map((cat) => ({
     id: cat.id,
     name: cat.name,
     image_url: cat.image_url,
     slug: cat.slug || "",
   }));
 
+  const { data: rawReviews, error: reviewError } = await supabase
+    .from("reviews")
+    .select("*")
+    .gte("rating", 4);
+
+  if (reviewError) {
+    console.error("❌ Error fetching reviews:", reviewError.message);
+  }
+
+  const allReviews: Review[] = (rawReviews || []).map((r) => ({
+    id: r.id,
+    userName: r.user_name,
+    rating: r.rating,
+    comment: r.comment,
+    date: r.date,
+  }));
+
+  const shuffled = allReviews.sort(() => 0.5 - Math.random());
+  const featuredReviews = shuffled.slice(0, 3);
+
   return {
     props: {
       popularProducts: popularProducts ?? [],
       categories: formattedCategories,
+      featuredReviews,
     },
   };
 };

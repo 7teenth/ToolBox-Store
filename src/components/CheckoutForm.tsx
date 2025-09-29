@@ -182,108 +182,118 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
           className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition"
           required
         />
-
-        <InputMask
-          mask="+380 (99) 999-99-99"
-          value={phone}
-          onChange={(e) => {
-            setPhone(e.target.value);
-            setPhoneError(false);
-          }}
-        >
-          {(inputProps) => (
-            <input
-              {...inputProps}
-              ref={phoneRef}
-              type="tel"
-              placeholder="Телефон"
-              className={`w-full border rounded-lg px-4 py-2 focus:ring-2 outline-none transition ${
-                phoneError
-                  ? "border-red-500 ring-red-300"
-                  : "border-gray-300 focus:ring-blue-500"
-              }`}
-              required
-            />
-          )}
-        </InputMask>
-        {phoneError && (
-          <p className="text-red-500 text-sm mt-1 sm:col-span-2">
-            Невірний формат. Використовуйте +380 (XX) XXX-XX-XX
-          </p>
+      </div>
+      <InputMask
+        mask="+380 (99) 999-99-99"
+        value={phone}
+        onChange={(e) => {
+          setPhone(e.target.value);
+          setPhoneError(false);
+        }}
+      >
+        {(inputProps) => (
+          <input
+            {...inputProps}
+            ref={phoneRef}
+            type="tel"
+            id="phone"
+            name="phone"
+            placeholder="Телефон"
+            className={`w-full border rounded-lg px-4 py-2 focus:ring-2 outline-none transition ${
+              phoneError
+                ? "border-red-500 ring-red-300"
+                : "border-gray-300 focus:ring-blue-500"
+            }`}
+            required
+          />
         )}
+      </InputMask>
 
+      {phoneError && (
+        <p className="text-red-500 text-sm mt-1 sm:col-span-2">
+          Невірний формат. Використовуйте +380 (XX) XXX-XX-XX
+        </p>
+      )}
+
+      <input
+        type="email"
+        id="email"
+        name="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition"
+      />
+
+      {/* Місто */}
+      <div className="relative col-span-1 sm:col-span-2">
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          id="city"
+          name="city"
+          placeholder="Місто"
+          value={cityQuery}
+          onChange={(e) => {
+            setCityQuery(e.target.value);
+            setSelectedCity("");
+          }}
+          onBlur={() => setTimeout(() => setCities([]), 100)}
           className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition"
+          required
         />
+        {cities.length > 0 && (
+          <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto animate-fade-in">
+            {cities.map((c) => (
+              <li
+                key={c}
+                onMouseDown={() => {
+                  setSelectedCity(c);
+                  setCityQuery(c);
+                  setCities([]);
+                }}
+                className="px-4 py-2 hover:bg-blue-50 cursor-pointer transition text-gray-800"
+              >
+                {c}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-        {/* Город */}
-        <div className="relative col-span-1 sm:col-span-2">
-          <input
-            type="text"
-            placeholder="Місто"
-            value={cityQuery}
-            onChange={(e) => {
-              setCityQuery(e.target.value);
-              setSelectedCity("");
-            }}
-            onBlur={() => setTimeout(() => setCities([]), 100)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            required
-          />
-          {cities.length > 0 && (
-            <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto animate-fade-in">
-              {cities.map((c) => (
-                <li
-                  key={c}
-                  onMouseDown={() => {
-                    setSelectedCity(c);
-                    setCityQuery(c);
-                    setCities([]);
-                  }}
-                  className="px-4 py-2 hover:bg-blue-50 cursor-pointer transition text-gray-800"
-                >
-                  {c}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Відділення */}
-        <div className="relative col-span-1 sm:col-span-2">
-          <input
-            type="text"
-            placeholder="Оберіть відділення"
-            value={warehouse}
-            onChange={(e) => setWarehouse(e.target.value)}
-            onBlur={() => setTimeout(() => setWarehouses([]), 100)}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            required
-          />
-          {warehouses.length > 0 && (
-            <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto animate-fade-in">
-              {warehouses.map((w) => (
-                <li
-                  key={w}
-                  onMouseDown={() => {
-                    setWarehouse(w);
-                    setWarehouses([]);
-                  }}
-                  className="px-4 py-2 hover:bg-blue-50 cursor-pointer transition text-gray-800"
-                >
-                  {w}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      {/* Відділення */}
+      <div className="relative col-span-1 sm:col-span-2">
+        <input
+          type="text"
+          id="warehouse"
+          name="warehouse"
+          placeholder="Оберіть відділення"
+          value={warehouse}
+          onChange={(e) => setWarehouse(e.target.value)}
+          onBlur={() => setTimeout(() => setWarehouses([]), 100)}
+          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition"
+          required
+        />
+        {warehouses.length > 0 && (
+          <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto animate-fade-in">
+            {warehouses.map((w) => (
+              <li
+                key={w}
+                onMouseDown={() => {
+                  setWarehouse(w);
+                  setWarehouses([]);
+                }}
+                className="px-4 py-2 hover:bg-blue-50 cursor-pointer transition text-gray-800"
+              >
+                {w}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <textarea
+        id="comment"
+        name="comment"
         placeholder="Коментар до замовлення"
         value={comment}
         onChange={(e) => setComment(e.target.value)}

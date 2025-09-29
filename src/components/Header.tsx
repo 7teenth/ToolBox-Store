@@ -56,11 +56,14 @@ const Header: React.FC = () => {
         <div className="flex-1 mx-auto w-full max-w-md mb-4 md:mb-0">
           <form onSubmit={handleSearch} className="relative w-full">
             <input
-              type="text"
+              type="search"
+              id="search"
+              name="search"
               placeholder="Пошук товару або категорії..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full px-4 py-2 rounded-lg text-black outline-none focus:ring-2 focus:ring-blue-500"
+              autoComplete="off"
             />
             <button
               type="submit"

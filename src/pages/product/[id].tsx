@@ -3,7 +3,9 @@ import Head from "next/head";
 import { supabase } from "../../lib/supabaseClient";
 import { Product } from "../../types/product";
 import { Layout } from "../../components/Layout";
-import { Reviews, Review } from "../../components/Reviews";
+import { Review } from "../../types/review";
+import { ReviewForm } from "../../components/ReviewForm";
+import { ReviewList } from "../../components/ReviewList";
 import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
@@ -24,7 +26,8 @@ export default function ProductPage({
   const { addItem } = useCart();
 
   const mainImage = getImageUrl(product?.image_url || "defaults/product.png");
-  const hoverImage = product?.image_hover && getImageUrl(product.image_hover);
+  const hoverImage =
+    product?.hover_image_url && getImageUrl(product.hover_image_url);
   const images = [mainImage, hoverImage].filter(Boolean);
 
   const [selectedImage, setSelectedImage] = useState(mainImage);
@@ -220,7 +223,12 @@ export default function ProductPage({
             <li>Производитель: {product.brand || "—"}</li>
           </ul>
         )}
-        {activeTab === "reviews" && <Reviews reviews={reviews} />}
+        {activeTab === "reviews" && (
+          <div className="space-y-8">
+            <ReviewForm productId={product.id} />
+            <ReviewList reviews={reviews} />
+          </div>
+        )}
       </div>
 
       {/* Похожие товары */}
@@ -269,29 +277,23 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     console.error("❌ Error fetching similar products:", similarError.message);
   }
 
-  const reviews: Review[] = [
-    {
-      id: 1,
-      userName: "Иван",
-      rating: 5,
-      comment: "Отличный товар!",
-      date: "2025-09-26",
-    },
-    {
-      id: 2,
-      userName: "Мария",
-      rating: 4,
-      comment: "Все понравилось, быстро доставили.",
-      date: "2025-09-25",
-    },
-    {
-      id: 3,
-      userName: "Алексей",
-      rating: 5,
-      comment: "Рекомендую!",
-      date: "2025-09-24",
-    },
-  ];
+  const { data: rawReviews, error: reviewError } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("product_id", id)
+    .order("date", { ascending: false });
+
+  const reviews: Review[] = (rawReviews || []).map((r) => ({
+    id: r.id,
+    userName: r.user_name, // 👈 маппинг поля
+    rating: r.rating,
+    comment: r.comment,
+    date: r.date,
+  }));
+
+  if (reviewError) {
+    console.error("❌ Error fetching reviews:", reviewError.message);
+  }
 
   return {
     props: {

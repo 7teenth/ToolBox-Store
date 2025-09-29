@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getImageUrl } from "../lib/getImageUrl";
+import { Subcategory } from "../types/subcategory";
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   image_url: string;
   slug?: string;
+  subcategories?: Subcategory[];
 }
 
 interface CategoriesProps {
@@ -14,11 +16,11 @@ interface CategoriesProps {
 }
 
 export const Categories: React.FC<CategoriesProps> = ({ categories }) => {
-  const [imageMap, setImageMap] = useState<Record<number, string>>({});
+  const [imageMap, setImageMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchImages = async () => {
-      const map: Record<number, string> = {};
+      const map: Record<string, string> = {};
       await Promise.all(
         categories.map(async (cat) => {
           const imagePath =
@@ -41,7 +43,7 @@ export const Categories: React.FC<CategoriesProps> = ({ categories }) => {
         {categories.map((cat) => (
           <Link
             key={cat.id}
-            href={cat.slug ? `/catalog/${cat.slug}` : "/catalog"}
+            href={`/catalog/${cat.slug || cat.id}`}
             className="category-card bg-white p-4 rounded-lg shadow hover:shadow-lg hover:scale-105 transition-transform cursor-pointer flex flex-col items-center"
           >
             <img

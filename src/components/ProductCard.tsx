@@ -1,19 +1,17 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Product } from "../types/product";
 import { getImageUrl } from "../lib/getImageUrl";
 import { useCart } from "@/context/CartContext";
 import { useCompare } from "@/context/CompareContext";
 import { toast } from "react-hot-toast";
+import { RatingStars } from "./RatingStars";
 
 export const ProductCard: React.FC<{
   product: Product;
   isPopular?: boolean;
 }> = ({ product, isPopular }) => {
   const stock = Number(product.stock ?? 0);
-
-  // Логируем входящие данные
-  console.log("🧩 ProductCard received product:", product);
 
   const defaultImage = getImageUrl(
     product.image_url || "defaults/default-product.png"
@@ -24,12 +22,7 @@ export const ProductCard: React.FC<{
       "defaults/default-product.png"
   );
 
-  console.log("🖼 defaultImage:", defaultImage);
-  console.log("🖼 hoverImage:", hoverImage);
-
   const [currentImage, setCurrentImage] = useState(defaultImage);
-  const [fade, setFade] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { addItem } = useCart();
   const { addItem: addToCompare, items: comparedItems } = useCompare();
@@ -44,22 +37,26 @@ export const ProductCard: React.FC<{
     comparedItems.length === 0 ||
     (!!currentType && !!comparedType && currentType === comparedType);
 
+  useEffect(() => {
+    console.log("✅ ProductCard rendered:", product.name);
+    console.log("🖼 defaultImage:", defaultImage);
+    console.log("🖼 hoverImage:", hoverImage);
+  }, []);
+
+  useEffect(() => {
+    console.log("🖼 currentImage changed:", currentImage);
+  }, [currentImage]);
+
   const handleMouseEnter = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setFade(true);
-    timeoutRef.current = setTimeout(() => {
-      setCurrentImage(hoverImage);
-      setFade(false);
-    }, 200);
+    console.log("🖱️ Mouse entered:", product.name);
+    console.log("🔄 Switching to hoverImage:", hoverImage);
+    setCurrentImage(hoverImage);
   };
 
   const handleMouseLeave = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setFade(true);
-    timeoutRef.current = setTimeout(() => {
-      setCurrentImage(defaultImage);
-      setFade(false);
-    }, 200);
+    console.log("🖱️ Mouse left:", product.name);
+    console.log("🔄 Reverting to defaultImage:", defaultImage);
+    setCurrentImage(defaultImage);
   };
 
   const handleAddToCart = () => {
@@ -119,16 +116,26 @@ export const ProductCard: React.FC<{
         href={`/product/${String(product.id)}`}
         className="flex-1 flex flex-col"
       >
-        <div className="relative">
+        <div className="relative w-full h-48 overflow-hidden">
           <img
-            src={currentImage}
+            src={defaultImage}
             alt={product.name}
+            className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-300 ${
+              currentImage === defaultImage ? "opacity-100" : "opacity-0"
+            }`}
             onError={(e) => {
               e.currentTarget.src = getImageUrl("defaults/default-product.png");
             }}
-            className={`w-full h-48 object-cover transition-opacity duration-300 ${
-              fade ? "opacity-0" : "opacity-100"
+          />
+          <img
+            src={hoverImage}
+            alt={product.name}
+            className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-300 ${
+              currentImage === hoverImage ? "opacity-100" : "opacity-0"
             }`}
+            onError={(e) => {
+              e.currentTarget.src = getImageUrl("defaults/default-product.png");
+            }}
           />
           {isPopular && (
             <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs font-bold rounded">
@@ -139,7 +146,14 @@ export const ProductCard: React.FC<{
 
         <div className="p-4 flex flex-col justify-between h-full">
           <h3 className="font-semibold text-lg">{product.name}</h3>
-          <div className="flex mt-1">{stars}</div>
+          <div className="flex items-center gap-2 mt-1">
+            <RatingStars rating={product.rating || 0} />
+            {product.rating > 0 && (
+              <span className="text-sm text-gray-600 font-medium">
+                {product.rating.toFixed(1)} / 5
+              </span>
+            )}
+          </div>
           <p className={`mt-1 font-medium ${availability.color}`}>
             {availability.text}
           </p>
