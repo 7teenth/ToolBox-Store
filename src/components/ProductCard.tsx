@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { Product } from "../types/product";
 import { getImageUrl } from "../lib/getImageUrl";
@@ -11,6 +11,10 @@ export const ProductCard: React.FC<{
   isPopular?: boolean;
 }> = ({ product, isPopular }) => {
   const stock = Number(product.stock ?? 0);
+
+  // Логируем входящие данные
+  console.log("🧩 ProductCard received product:", product);
+
   const defaultImage = getImageUrl(
     product.image_url || "defaults/default-product.png"
   );
@@ -20,8 +24,12 @@ export const ProductCard: React.FC<{
       "defaults/default-product.png"
   );
 
+  console.log("🖼 defaultImage:", defaultImage);
+  console.log("🖼 hoverImage:", hoverImage);
+
   const [currentImage, setCurrentImage] = useState(defaultImage);
   const [fade, setFade] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { addItem } = useCart();
   const { addItem: addToCompare, items: comparedItems } = useCompare();
@@ -33,19 +41,22 @@ export const ProductCard: React.FC<{
   const comparedType = normalize(comparedItems[0]?.tool_types?.name);
 
   const isCompatible =
-    comparedItems.length === 0 || currentType === comparedType;
+    comparedItems.length === 0 ||
+    (!!currentType && !!comparedType && currentType === comparedType);
 
   const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setFade(true);
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setCurrentImage(hoverImage);
       setFade(false);
     }, 200);
   };
 
   const handleMouseLeave = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setFade(true);
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setCurrentImage(defaultImage);
       setFade(false);
     }, 200);
@@ -153,6 +164,7 @@ export const ProductCard: React.FC<{
           onClick={handleCompare}
           className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition"
           title="Додати до порівняння"
+          aria-label="Додати до порівняння"
         >
           ⚖️
         </button>
