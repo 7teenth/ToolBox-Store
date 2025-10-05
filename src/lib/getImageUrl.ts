@@ -1,18 +1,19 @@
 export function getImageUrl(path: string): string {
-  const cleaned = path.replace(/^\/+/, "");
+  if (!path) return '';
 
-  if (cleaned.startsWith("assets/")) {
-    return `https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/${cleaned}`;
-  }
+  const cleaned = path.replace(/^\/+/, '');
+
+  const base = 'https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/assets';
 
   if (
-    cleaned.startsWith("logos/") ||
-    cleaned.startsWith("defaults/") ||
-    cleaned.startsWith("slides/") ||
-    cleaned.startsWith("products/")
+    cleaned.startsWith('categories/') ||
+    cleaned.startsWith('defaults/') ||
+    cleaned.startsWith('logos/') ||
+    cleaned.startsWith('slides/')
   ) {
-    return `https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/assets/${cleaned}`;
+    return `${base}/${cleaned}`;
   }
 
-  return `https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/assets/products/${cleaned}`;
+  // Всё остальное считаем товаром
+  return `${base}/products/${cleaned}`;
 }

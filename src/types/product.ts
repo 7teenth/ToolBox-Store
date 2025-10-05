@@ -14,9 +14,11 @@ export interface Product {
   rating: number;
   weight?: number;
   power?: number;
+  subcategory_id?: string; // ✅ уже есть
+  power_type?: string; // ✅ добавь это поле
   tool_types?: {
     name: string;
+    id?: string; // ✅ если ты фильтруешь по id
   };
   features?: Record<string, string | number>;
-
 }

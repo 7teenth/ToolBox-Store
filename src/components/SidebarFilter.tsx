@@ -12,6 +12,9 @@ interface Props {
   toolTypes: { id: string; name: string }[];
   availableToolTypes: string[];
   selectedToolTypes: string[];
+  powerTypes: string[];
+  availablePowerTypes: string[];
+  selectedPowerTypes: string[];
   activeSubcategory: string | null;
   priceMin: number | null;
   priceMax: number | null;
@@ -19,6 +22,7 @@ interface Props {
   onSubcategorySelect: (id: string | null) => void;
   onBrandToggle: (brand: string) => void;
   onToolTypeToggle: (type: string) => void;
+  onPowerTypeToggle: (type: string) => void;
   onPriceMinChange: (value: number | null) => void;
   onPriceMaxChange: (value: number | null) => void;
   onResetFilters?: () => void;
@@ -32,6 +36,9 @@ const SidebarFilter = ({
   toolTypes,
   availableToolTypes,
   selectedToolTypes,
+  powerTypes,
+  availablePowerTypes,
+  selectedPowerTypes,
   activeSubcategory,
   priceMin,
   priceMax,
@@ -39,6 +46,7 @@ const SidebarFilter = ({
   onSubcategorySelect,
   onBrandToggle,
   onToolTypeToggle,
+  onPowerTypeToggle,
   onPriceMinChange,
   onPriceMaxChange,
   onResetFilters,
@@ -80,6 +88,8 @@ const SidebarFilter = ({
         </h2>
         <ul className="mt-3 space-y-2">
           {toolTypes.map((type) => {
+            if (!type.id) return null;
+
             const isAvailable = availableToolTypes.includes(type.id);
             const isSelected = selectedToolTypes.includes(type.id);
 
@@ -198,6 +208,66 @@ const SidebarFilter = ({
         <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
           Тип живлення
         </h2>
+        <ul className="mt-3 space-y-2">
+          {powerTypes.map((type) => {
+            const isAvailable = availablePowerTypes.includes(type);
+            const isSelected = selectedPowerTypes.includes(type);
+
+            return (
+              <li key={type}>
+                <label
+                  className={`flex items-center gap-3 group ${
+                    !isAvailable
+                      ? "opacity-50 cursor-not-allowed pointer-events-none"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onPowerTypeToggle(type)}
+                    className="hidden peer"
+                    disabled={!isAvailable}
+                  />
+                  <div
+                    className={`w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all duration-200 ${
+                      isSelected
+                        ? "border-blue-600 bg-blue-600"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    <CheckIcon
+                      className={`w-4 h-4 text-white transition duration-200 ${
+                        isSelected ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-700 group-hover:text-blue-600 transition">
+                    {type}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+
+        {selectedPowerTypes.length > 0 && (
+          <button
+            onClick={() => {
+              selectedPowerTypes.forEach(onPowerTypeToggle);
+            }}
+            className="mt-3 text-sm text-blue-600 hover:text-blue-800 hover:underline transition"
+          >
+            Очистити типи живлення
+          </button>
+        )}
+      </div>
+
+      {/* Тип живлення (по подкатегориям) */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+          Тип живлення (категорія)
+        </h2>
         <ul className="space-y-2 mt-3">
           {subcategories.map((sub) => (
             <li key={sub.id}>
@@ -215,7 +285,6 @@ const SidebarFilter = ({
           ))}
         </ul>
       </div>
-
       {/* Ціна */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
@@ -265,12 +334,10 @@ const SidebarFilter = ({
               }
             }}
           />
-
           <div className="flex justify-between mt-3 text-sm text-gray-600 font-medium">
             <span>{formatter.format(safeMin)} грн</span>
             <span>{formatter.format(safeMax)} грн</span>
           </div>
-
           {(priceMin !== null || priceMax !== null) && (
             <button
               onClick={() => {
