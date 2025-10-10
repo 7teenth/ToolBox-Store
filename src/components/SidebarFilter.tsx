@@ -1,3 +1,4 @@
+// components/SidebarFilter.tsx
 import { Subcategory } from "@/types/subcategory";
 import { CheckIcon } from "@heroicons/react/24/solid";
 import Slider from "rc-slider";
@@ -81,7 +82,7 @@ const SidebarFilter = ({
         </div>
       )}
 
-      {/* Вид інструменту */}
+      {/* === Вид інструменту === */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
           Вид інструменту
@@ -89,7 +90,6 @@ const SidebarFilter = ({
         <ul className="mt-3 space-y-2">
           {toolTypes.map((type) => {
             if (!type.id) return null;
-
             const isAvailable = availableToolTypes.includes(type.id);
             const isSelected = selectedToolTypes.includes(type.id);
 
@@ -133,9 +133,7 @@ const SidebarFilter = ({
 
         {selectedToolTypes.length > 0 && (
           <button
-            onClick={() => {
-              selectedToolTypes.forEach((id) => onToolTypeToggle(id));
-            }}
+            onClick={() => selectedToolTypes.forEach(onToolTypeToggle)}
             className="mt-3 text-sm text-blue-600 hover:text-blue-800 hover:underline transition"
           >
             Очистити види
@@ -143,7 +141,7 @@ const SidebarFilter = ({
         )}
       </div>
 
-      {/* Бренди */}
+      {/* === Бренди === */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
           Бренди
@@ -193,9 +191,7 @@ const SidebarFilter = ({
 
         {selectedBrands.length > 0 && (
           <button
-            onClick={() => {
-              selectedBrands.forEach(onBrandToggle);
-            }}
+            onClick={() => selectedBrands.forEach(onBrandToggle)}
             className="mt-3 text-sm text-blue-600 hover:text-blue-800 hover:underline transition"
           >
             Очистити бренди
@@ -203,7 +199,7 @@ const SidebarFilter = ({
         )}
       </div>
 
-      {/* Тип живлення */}
+      {/* === Тип живлення === */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
           Тип живлення
@@ -253,9 +249,7 @@ const SidebarFilter = ({
 
         {selectedPowerTypes.length > 0 && (
           <button
-            onClick={() => {
-              selectedPowerTypes.forEach(onPowerTypeToggle);
-            }}
+            onClick={() => selectedPowerTypes.forEach(onPowerTypeToggle)}
             className="mt-3 text-sm text-blue-600 hover:text-blue-800 hover:underline transition"
           >
             Очистити типи живлення
@@ -263,7 +257,7 @@ const SidebarFilter = ({
         )}
       </div>
 
-      {/* Тип живлення (по подкатегориям) */}
+      {/* === Підкатегорії === */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
           Тип живлення (категорія)
@@ -285,7 +279,8 @@ const SidebarFilter = ({
           ))}
         </ul>
       </div>
-      {/* Ціна */}
+
+      {/* === Ціна === */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
           Ціна, грн
@@ -298,10 +293,9 @@ const SidebarFilter = ({
             max={sliderMax}
             step={100}
             value={safeMin}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              onPriceMinChange(isNaN(val) ? null : val);
-            }}
+            onChange={(e) =>
+              onPriceMinChange(isNaN(+e.target.value) ? null : +e.target.value)
+            }
             className="w-28 border rounded-lg px-2 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <span className="text-gray-500">—</span>
@@ -311,10 +305,9 @@ const SidebarFilter = ({
             max={sliderMax}
             step={100}
             value={safeMax}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              onPriceMaxChange(isNaN(val) ? null : val);
-            }}
+            onChange={(e) =>
+              onPriceMaxChange(isNaN(+e.target.value) ? null : +e.target.value)
+            }
             className="w-28 border rounded-lg px-2 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -338,6 +331,7 @@ const SidebarFilter = ({
             <span>{formatter.format(safeMin)} грн</span>
             <span>{formatter.format(safeMax)} грн</span>
           </div>
+
           {(priceMin !== null || priceMax !== null) && (
             <button
               onClick={() => {

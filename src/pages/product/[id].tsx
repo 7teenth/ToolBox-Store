@@ -1,51 +1,72 @@
+// pages/product/[id].tsx
 import { GetServerSideProps } from "next";
 import Head from "next/head";
-import { supabase } from "../../lib/supabaseClient";
-import { Product } from "../../types/product";
-import { Layout } from "../../components/Layout";
-import { Review } from "../../types/review";
-import { ReviewForm } from "../../components/ReviewForm";
-import { ReviewList } from "../../components/ReviewList";
-import { useState } from "react";
-import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
+import { Product } from "@/types/product";
+import { Review } from "@/types/review";
+import { Layout } from "@/components/Layout";
+import { ReviewForm } from "@/components/ReviewForm";
+import { ReviewList } from "@/components/ReviewList";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { useCart } from "@/context/CartContext";
 import { toast } from "react-hot-toast";
 import { getImageUrl } from "@/lib/getImageUrl";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductPageProps {
   product: Product | null;
   reviews: Review[];
   similarProducts: Product[];
+  imageUrls: string[];
 }
+
+const TabSkeleton = ({ lines = 4 }: { lines?: number }) => (
+  <div className="animate-pulse space-y-3">
+    {Array.from({ length: lines }).map((_, i) => (
+      <div key={i} className="h-4 bg-gray-300/70 rounded w-full" />
+    ))}
+  </div>
+);
 
 export default function ProductPage({
   product,
   reviews,
   similarProducts,
+  imageUrls,
 }: ProductPageProps) {
   const { addItem } = useCart();
-
-  const mainImage = getImageUrl(product?.image_url || "defaults/product.png");
-  const hoverImage =
-    product?.hover_image_url && getImageUrl(product.hover_image_url);
-  const images = [mainImage, hoverImage].filter(Boolean);
-
-  const [selectedImage, setSelectedImage] = useState(mainImage);
-  const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<
-    "description" | "specs" | "reviews"
-  >("description");
+  const router = useRouter();
 
   if (!product) {
     return (
       <Layout>
         <div className="max-w-3xl mx-auto py-20 text-center">
-          <h1 className="text-2xl font-bold mb-4">Товар не найден</h1>
-          <p>Возможно, этот товар был удалён или не существует.</p>
+          <h1 className="text-2xl font-bold mb-4">Товар не знайдено</h1>
+          <p className="text-gray-600">
+            Можливо, цей товар був видалений або не існує.
+          </p>
         </div>
       </Layout>
     );
   }
+
+  const fallbackImage = getImageUrl("defaults/product.png");
+  const [selectedImage, setSelectedImage] = useState(
+    imageUrls.length > 0 ? imageUrls[0] : fallbackImage
+  );
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState<
+    "description" | "specs" | "reviews"
+  >("description");
+  const [loadingTab, setLoadingTab] = useState(false);
+
+  useEffect(() => {
+    setSelectedImage(imageUrls.length > 0 ? imageUrls[0] : fallbackImage);
+    setImgLoaded(false);
+  }, [product, imageUrls]);
 
   const stars = Array.from({ length: 5 }, (_, i) => (
     <span
@@ -58,6 +79,15 @@ export default function ProductPage({
     </span>
   ));
 
+  const switchTab = (tab: typeof activeTab) => {
+    if (tab === activeTab) return;
+    setLoadingTab(true);
+    setTimeout(() => {
+      setActiveTab(tab);
+      setLoadingTab(false);
+    }, 250);
+  };
+
   const increment = () =>
     setQuantity((q) => Math.min(q + 1, product.stock || 1));
   const decrement = () => setQuantity((q) => Math.max(q - 1, 1));
@@ -67,18 +97,17 @@ export default function ProductPage({
       id: String(product.id),
       name: product.name,
       price: product.price,
-      image: getImageUrl(product?.image_url || "defaults/product.png"),
+      image: selectedImage,
       quantity,
     });
-
-    toast.success("Додано до кошика!", {
-      icon: "🛒",
-      style: {
-        borderRadius: "8px",
-        background: "#333",
-        color: "#fff",
-      },
+    toast.success("Додано до кошика 🛒", {
+      style: { borderRadius: "8px", background: "#222", color: "#fff" },
     });
+  };
+
+  const handleOrderNow = () => {
+    handleAddToCart();
+    router.push("/cart");
   };
 
   return (
@@ -88,165 +117,216 @@ export default function ProductPage({
         <meta
           name="description"
           content={
-            product.short_description?.trim()
-              ? product.short_description
-              : `Купити ${product.name} за ${product.price} грн. Доступно на ToolBox Store.`
+            product.short_description?.trim() ||
+            `Купити ${product.name} за ${product.price} грн.`
           }
         />
+        <meta property="og:image" content={selectedImage} />
       </Head>
 
-      {/* Верхняя часть: фото + инфо */}
-      <div className="max-w-6xl mx-auto py-12 px-4 flex flex-col md:flex-row gap-8">
+      {/* Контент */}
+      <div className="max-w-6xl mx-auto py-12 px-4 flex flex-col md:flex-row gap-10">
         {/* Галерея */}
         <div className="flex-1 flex flex-col gap-4">
-          <img
-            src={selectedImage}
-            alt={product.name}
-            className="w-full h-96 object-cover rounded-lg shadow-md"
-          />
-          <div className="flex gap-2">
-            {images.map((img, idx) => (
-              <img
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: imgLoaded ? 1 : 0 }}
+            className="relative w-full h-96 bg-gray-50 rounded-xl overflow-hidden"
+          >
+            <Image
+              src={selectedImage}
+              alt={product.name}
+              fill
+              priority
+              className="object-contain"
+              onLoad={() => setImgLoaded(true)}
+              onError={(e) => ((e.currentTarget as any).src = fallbackImage)}
+            />
+          </motion.div>
+
+          {/* Мініатюри */}
+          <div className="flex gap-2 flex-wrap">
+            {imageUrls.map((img, idx) => (
+              <button
                 key={idx}
-                src={img}
-                alt={`thumb-${idx}`}
-                className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
-                  selectedImage === img ? "border-blue-600" : "border-gray-300"
+                onClick={() => {
+                  setSelectedImage(img);
+                  setImgLoaded(false);
+                }}
+                className={`relative w-20 h-20 rounded overflow-hidden border-2 transition-all ${
+                  selectedImage === img
+                    ? "border-blue-600 ring-2 ring-blue-100"
+                    : "border-gray-300 hover:border-blue-400"
                 }`}
-                onClick={() => setSelectedImage(img ?? mainImage)}
-              />
+              >
+                <Image
+                  src={img}
+                  alt={`thumb-${idx}`}
+                  fill
+                  className="object-cover"
+                />
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Инфо */}
+        {/* Інформація */}
         <div className="flex-1 flex flex-col justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+            <h1 className="text-3xl font-bold mb-3 text-gray-800">
+              {product.name}
+            </h1>
             {product.tool_types?.name && (
               <p className="text-sm text-gray-500 mb-4">
                 Тип інструменту: <strong>{product.tool_types.name}</strong>
               </p>
             )}
+
             <div className="flex items-center mb-4 gap-2">
               {stars}
               <span className="text-sm text-gray-500">
-                ({reviews.length} отзывов)
+                ({reviews.length} відгуків)
               </span>
             </div>
-            <p className="text-gray-700 mb-4">{product.short_description}</p>
-            <span className="text-3xl font-bold text-green-600">
-              {product.price} грн
-            </span>
-            <p className="mt-2 text-sm text-gray-500">
-              В наличии: {product.stock > 0 ? product.stock : "Нет"}
+
+            <p className="text-gray-700 mb-4 leading-relaxed">
+              {product.short_description}
             </p>
 
-            {/* Количество */}
-            <div className="mt-4 flex items-center gap-4">
+            <span className="text-3xl font-bold text-green-600 block mb-2">
+              {product.price} грн
+            </span>
+            <p className="text-sm text-gray-500">
+              В наявності:{" "}
+              <span className="font-medium text-gray-800">
+                {product.stock > 0 ? product.stock : "Немає"}
+              </span>
+            </p>
+
+            <div className="mt-5 flex items-center gap-4">
               <button
                 onClick={decrement}
-                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300 text-lg font-semibold"
               >
-                -
+                −
               </button>
-              <span>{quantity}</span>
+              <span className="text-lg">{quantity}</span>
               <button
                 onClick={increment}
-                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300 text-lg font-semibold"
               >
                 +
               </button>
             </div>
           </div>
 
-          {/* Кнопки */}
-          <div className="mt-6 flex gap-4 flex-col sm:flex-row">
+          <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <button
-              className={`flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg transition-colors ${
-                product.stock === 0 ? "opacity-50 cursor-not-allowed" : ""
-              }`}
               disabled={product.stock === 0}
               onClick={handleAddToCart}
+              className={`flex-1 px-5 py-3 rounded-lg text-lg text-white font-medium transition-colors ${
+                product.stock === 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
-              В корзину
+              У кошик
             </button>
-
-            <Link href="/cart">
-              <button
-                className={`flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-lg transition-colors ${
-                  product.stock === 0 ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                disabled={product.stock === 0}
-                onClick={handleAddToCart}
-              >
-                Оформить заказ
-              </button>
-            </Link>
+            <button
+              disabled={product.stock === 0}
+              onClick={handleOrderNow}
+              className={`flex-1 px-5 py-3 rounded-lg text-lg text-white font-medium transition-colors ${
+                product.stock === 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              Оформити замовлення
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Табы */}
+      {/* Tabs */}
       <div className="max-w-6xl mx-auto px-4 mt-12">
         <div className="flex border-b mb-6">
           {["description", "specs", "reviews"].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab as typeof activeTab)}
-              className={`px-4 py-2 ${
+              onClick={() => switchTab(tab as typeof activeTab)}
+              className={`px-5 py-2 transition-all ${
                 activeTab === tab
                   ? "border-b-2 border-blue-600 text-blue-600 font-semibold"
-                  : "text-gray-500"
+                  : "text-gray-500 hover:text-blue-600"
               }`}
             >
               {tab === "description"
-                ? "Описание"
+                ? "Опис"
                 : tab === "specs"
                 ? "Характеристики"
-                : "Отзывы"}
+                : "Відгуки"}
             </button>
           ))}
         </div>
 
-        {activeTab === "description" && (
-          <p className="text-gray-700">
-            {product.description?.trim()
-              ? product.description
-              : "Опис товару наразі недоступний."}
-          </p>
-        )}
-        {activeTab === "specs" && (
-          <ul className="list-disc ml-6 text-gray-700">
-            <li>Мощность: {product.power || "—"}</li>
-            <li>Вес: {product.weight || "—"}</li>
-            <li>Производитель: {product.brand || "—"}</li>
-          </ul>
-        )}
-        {activeTab === "reviews" && (
-          <div className="space-y-8">
-            <ReviewForm productId={product.id} />
-            <ReviewList reviews={reviews} />
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {loadingTab ? (
+            <TabSkeleton lines={5} />
+          ) : (
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              {activeTab === "description" ? (
+                <p className="text-gray-700">
+                  {product.description?.trim() ||
+                    "Опис товару наразі недоступний."}
+                </p>
+              ) : activeTab === "specs" ? (
+                <ul className="list-disc ml-6 text-gray-700 space-y-1">
+                  <li>Потужність: {product.power || "—"}</li>
+                  <li>Вага: {product.weight || "—"}</li>
+                  <li>Виробник: {product.brand || "—"}</li>
+                </ul>
+              ) : (
+                <div className="space-y-8">
+                  <ReviewList reviews={reviews} />
+                  <ReviewForm productId={product.id} />
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Похожие товары */}
+      {/* Схожі товари */}
       <div className="max-w-6xl mx-auto px-4 mt-16 mb-12">
-        <h2 className="text-2xl font-bold mb-6">Похожие товары</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Схожі товари</h2>
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {similarProducts.map((prod) => (
-            <Link href={`/product/${prod.id}`} key={prod.id}>
-              <div className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition cursor-pointer">
-                <img
-                  src={getImageUrl(prod.image_url || "defaults/product.png")}
-                  alt={prod.name}
-                  className="w-full h-40 object-cover rounded"
-                />
-                <h3 className="mt-2 font-semibold">{prod.name}</h3>
-                <p className="text-green-600 font-bold">{prod.price} грн</p>
-              </div>
-            </Link>
+            <motion.button
+              key={prod.id}
+              onClick={() => router.push(`/product/${prod.id}`)}
+              whileHover={{ scale: 1.02 }}
+              className="bg-white rounded-lg shadow-sm p-4 hover:shadow-lg transition cursor-pointer"
+            >
+              <Image
+                src={getImageUrl(
+                  (prod as any).image_url || "defaults/product.png"
+                )}
+                alt={prod.name}
+                width={400}
+                height={400}
+                className="w-full h-40 object-cover rounded"
+              />
+              <h3 className="mt-2 font-semibold text-gray-800 truncate">
+                {prod.name}
+              </h3>
+              <p className="text-green-600 font-bold">{prod.price} грн</p>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -254,6 +334,7 @@ export default function ProductPage({
   );
 }
 
+// --- Server Side ---
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { id } = context.params as { id: string };
 
@@ -263,43 +344,60 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     .eq("id", id)
     .single();
 
-  if (productError) {
-    console.error("❌ Error fetching product:", productError.message);
-  }
+  if (productError || !product) return { notFound: true };
 
-  const { data: similarProducts, error: similarError } = await supabase
+  const { data: similarProducts } = await supabase
     .from("products")
     .select("*, tool_types(name)")
     .neq("id", id)
     .limit(4);
 
-  if (similarError) {
-    console.error("❌ Error fetching similar products:", similarError.message);
-  }
-
-  const { data: rawReviews, error: reviewError } = await supabase
+  const { data: rawReviews } = await supabase
     .from("reviews")
     .select("*")
     .eq("product_id", id)
     .order("date", { ascending: false });
 
-  const reviews: Review[] = (rawReviews || []).map((r) => ({
-    id: r.id,
-    userName: r.user_name, // 👈 маппинг поля
-    rating: r.rating,
-    comment: r.comment,
-    date: r.date,
-  }));
+  const reviews: Review[] =
+    rawReviews?.map((r) => ({
+      id: r.id,
+      userName: r.user_name,
+      rating: r.rating,
+      comment: r.comment,
+      date: r.date,
+    })) || [];
 
-  if (reviewError) {
-    console.error("❌ Error fetching reviews:", reviewError.message);
+  const folderPath = `assets/products/${id}`;
+  let imageUrls: string[] = [];
+
+  try {
+    const { data: files } = await supabase.storage
+      .from("products")
+      .list(folderPath);
+    if (files?.length) {
+      imageUrls = files
+        .filter((f) => f.name.match(/\.(png|jpg|jpeg|webp)$/i))
+        .map((f) => getImageUrl(`${folderPath}/${f.name}`));
+    }
+  } catch (err) {
+    console.error("Image listing error:", err);
   }
+
+  // Добавляем основное изображение и hover, если нет файлов в папке
+  const addUrl = (path: string | null | undefined) => {
+    if (!path) return;
+    if (!path.startsWith("products/")) imageUrls.push(getImageUrl(path));
+    else imageUrls.push(getImageUrl(path));
+  };
+  addUrl((product as any).image_url);
+  addUrl((product as any).hover_image_url);
 
   return {
     props: {
-      product: product ?? null,
+      product,
       reviews,
       similarProducts: similarProducts ?? [],
+      imageUrls,
     },
   };
 };

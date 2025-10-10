@@ -21,4 +21,5 @@ export interface Product {
     id?: string; // ✅ если ты фильтруешь по id
   };
   features?: Record<string, string | number>;
+  specs?: { key: string; value: string }[];
 }

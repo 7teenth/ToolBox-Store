@@ -1,19 +1,35 @@
 export function getImageUrl(path: string): string {
-  if (!path) return '';
+  if (!path) return "";
 
-  const cleaned = path.replace(/^\/+/, '');
+  // Прибираємо зайві слеші на початку та подвійні дефіси
+  const cleaned = path.replace(/^\/+/, "").replace(/--+/g, "-");
+  const base =
+    "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/assets";
 
-  const base = 'https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/assets';
+  let finalUrl = "";
 
   if (
-    cleaned.startsWith('categories/') ||
-    cleaned.startsWith('defaults/') ||
-    cleaned.startsWith('logos/') ||
-    cleaned.startsWith('slides/')
+    cleaned.startsWith("categories/") ||
+    cleaned.startsWith("defaults/") ||
+    cleaned.startsWith("logos/") ||
+    cleaned.startsWith("slides/")
   ) {
-    return `${base}/${cleaned}`;
+    // системні папки
+    finalUrl = `${base}/${cleaned}`;
+  } else if (cleaned.startsWith("products/")) {
+    // якщо вже є products — не додаємо знову
+    finalUrl = `${base}/${cleaned}`;
+  } else {
+    // звичайний продукт
+    finalUrl = `${base}/products/${cleaned}`;
   }
 
-  // Всё остальное считаем товаром
-  return `${base}/products/${cleaned}`;
+  // прибираємо випадкові подвійні слеші чи дефіси
+  finalUrl = finalUrl.replace(/([^:])\/{2,}/g, "$1/").replace(/--+/g, "-");
+
+  if (typeof window === "undefined") {
+    console.log("🧩 getImageUrl (server):", path, "→", finalUrl);
+  }
+
+  return finalUrl;
 }
