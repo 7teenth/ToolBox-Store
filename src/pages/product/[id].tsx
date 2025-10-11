@@ -14,6 +14,7 @@ import { toast } from "react-hot-toast";
 import { getImageUrl } from "@/lib/getImageUrl";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { ProductCard } from "@/components/ProductCard";
 
 interface ProductPageProps {
   product: Product | null;
@@ -105,8 +106,24 @@ export default function ProductPage({
     });
   };
 
+  const cart = useCart();
+
   const handleOrderNow = () => {
-    handleAddToCart();
+    const alreadyInCart = cart.items.some((i) => i.id === String(product.id));
+
+    if (!alreadyInCart) {
+      cart.addItem({
+        id: String(product.id),
+        name: product.name,
+        price: product.price,
+        image: selectedImage,
+        quantity,
+      });
+      toast.success("Додано до кошика 🛒", {
+        style: { borderRadius: "8px", background: "#222", color: "#fff" },
+      });
+    }
+
     router.push("/cart");
   };
 
@@ -287,9 +304,9 @@ export default function ProductPage({
                 </p>
               ) : activeTab === "specs" ? (
                 <ul className="list-disc ml-6 text-gray-700 space-y-1">
-                  <li>Потужність: {product.power || "—"}</li>
-                  <li>Вага: {product.weight || "—"}</li>
-                  <li>Виробник: {product.brand || "—"}</li>
+                  {product.power && <li>Потужність: {product.power}</li>}
+                  {product.weight && <li>Вага: {product.weight}</li>}
+                  {product.brand && <li>Виробник: {product.brand}</li>}
                 </ul>
               ) : (
                 <div className="space-y-8">
@@ -307,26 +324,11 @@ export default function ProductPage({
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Схожі товари</h2>
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {similarProducts.map((prod) => (
-            <motion.button
+            <ProductCard
               key={prod.id}
-              onClick={() => router.push(`/product/${prod.id}`)}
-              whileHover={{ scale: 1.02 }}
-              className="bg-white rounded-lg shadow-sm p-4 hover:shadow-lg transition cursor-pointer"
-            >
-              <Image
-                src={getImageUrl(
-                  (prod as any).image_url || "defaults/product.png"
-                )}
-                alt={prod.name}
-                width={400}
-                height={400}
-                className="w-full h-40 object-cover rounded"
-              />
-              <h3 className="mt-2 font-semibold text-gray-800 truncate">
-                {prod.name}
-              </h3>
-              <p className="text-green-600 font-bold">{prod.price} грн</p>
-            </motion.button>
+              product={prod}
+              isPopular={prod.sales > 50} // можно любой критерий популярности
+            />
           ))}
         </div>
       </div>

@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { getImageUrl } from "../lib/getImageUrl";
 import { FiShoppingCart, FiBarChart2 } from "react-icons/fi";
 import { useCart } from "@/context/CartContext";
 import { useCompare } from "@/context/CompareContext";
+import { supabase } from "@/lib/supabaseClient";
+
+interface SearchResult {
+  id: string;
+  name: string;
+  type: "tool_type" | "brand";
+}
 
 const Header: React.FC = () => {
   const [query, setQuery] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const { items } = useCart();
   const { items: compareItems } = useCompare();
@@ -15,15 +24,86 @@ const Header: React.FC = () => {
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const compareCount = compareItems.length;
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const url = getImageUrl("logos/logo.png");
     setLogoUrl(url);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      window.location.href = `/search?query=${encodeURIComponent(query)}`;
+  // Закрыть dropdown при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Поиск
+  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value;
+    setQuery(q);
+
+    if (!q.trim()) {
+      setResults([]);
+      setDropdownOpen(false);
+      return;
+    }
+
+    // Поиск по tool_types
+    const { data: toolTypes } = await supabase
+      .from("tool_types")
+      .select("id, name")
+      .ilike("name", `%${q}%`)
+      .limit(5);
+
+    // Поиск по брендам в products
+    const { data: brands } = await supabase
+      .from("products")
+      .select("brand")
+      .ilike("brand", `%${q}%`)
+      .limit(5);
+
+    // Уникальные бренды
+    const brandResults: SearchResult[] = Array.from(
+      new Map(
+        (brands ?? [])
+          .filter((b) => b.brand)
+          .map((b) => [
+            b.brand,
+            { id: b.brand!, name: b.brand!, type: "brand" as const },
+          ])
+      ).values()
+    );
+
+    const combined: SearchResult[] = [
+      ...(toolTypes?.map((t) => ({
+        id: t.id,
+        name: t.name,
+        type: "tool_type" as const,
+      })) ?? []),
+      ...brandResults,
+    ];
+
+    setResults(combined);
+    setDropdownOpen(combined.length > 0);
+  };
+
+  const handleSelect = (item: SearchResult) => {
+    setQuery("");
+    setResults([]);
+    setDropdownOpen(false);
+
+    if (item.type === "tool_type") {
+      window.location.href = `/catalog?tool_type=${item.id}`;
+    } else if (item.type === "brand") {
+      window.location.href = `/catalog?brand=${encodeURIComponent(item.name)}`;
     }
   };
 
@@ -44,7 +124,6 @@ const Header: React.FC = () => {
               ToolBox Store
             </h1>
           </Link>
-
           <Link href="/catalog">
             <button className="bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded-lg font-medium shadow">
               Каталог
@@ -52,45 +131,64 @@ const Header: React.FC = () => {
           </Link>
         </div>
 
-        {/* Центр: пошук */}
-        <div className="flex-1 mx-auto w-full max-w-md mb-4 md:mb-0">
-          <form onSubmit={handleSearch} className="relative w-full">
-            <input
-              type="search"
-              id="search"
-              name="search"
-              placeholder="Пошук товару або категорії..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg text-black outline-none focus:ring-2 focus:ring-blue-500"
-              autoComplete="off"
-            />
-            <button
-              type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-              aria-label="Пошук"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-700"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.5 3a7.5 7.5 0 016.15 13.65z"
-                />
-              </svg>
-            </button>
-          </form>
+        {/* Центр: поиск */}
+        <div
+          className="flex-1 mx-auto w-full max-w-md mb-4 md:mb-0 relative"
+          ref={wrapperRef}
+        >
+          <input
+            type="search"
+            placeholder="Пошук по типу інструменту або бренду..."
+            value={query}
+            onChange={handleSearchChange}
+            className="w-full px-4 py-2 rounded-lg text-black outline-none focus:ring-2 focus:ring-blue-500"
+            autoComplete="off"
+          />
+
+          {/* Dropdown */}
+          {dropdownOpen && results.length > 0 && (
+            <div className="absolute top-full left-0 right-0 bg-white text-black rounded-lg shadow-md mt-1 max-h-60 overflow-y-auto z-50">
+              {results.some((r) => r.type === "tool_type") && (
+                <div className="border-b px-4 py-1 text-gray-500 font-semibold">
+                  Типи інструментів
+                </div>
+              )}
+              {results
+                .filter((r) => r.type === "tool_type")
+                .map((item) => (
+                  <div
+                    key={`tool_type-${item.id}`}
+                    onClick={() => handleSelect(item)}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  >
+                    <span>{item.name}</span>
+                    <span className="text-xs text-gray-500">Тип</span>
+                  </div>
+                ))}
+
+              {results.some((r) => r.type === "brand") && (
+                <div className="border-b px-4 py-1 text-gray-500 font-semibold">
+                  Бренди
+                </div>
+              )}
+              {results
+                .filter((r) => r.type === "brand")
+                .map((item) => (
+                  <div
+                    key={`brand-${item.id}`}
+                    onClick={() => handleSelect(item)}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  >
+                    <span>{item.name}</span>
+                    <span className="text-xs text-gray-500">Бренд</span>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Права частина: телефон + порівняння + кошик */}
         <div className="flex items-center justify-end space-x-3 relative">
-          {/* Телефон */}
           <a
             href="tel:+380990817643"
             className="bg-gray-700 hover:bg-gray-600 transition-colors px-4 py-2 rounded-lg font-medium shadow flex items-center justify-center"
@@ -99,7 +197,6 @@ const Header: React.FC = () => {
             <span className="hidden sm:inline">+38 (099) 081-76-43</span>
           </a>
 
-          {/* Порівняння */}
           <Link href="/compare">
             <button
               className="relative p-2 rounded-full hover:bg-gray-700 transition"
@@ -115,7 +212,6 @@ const Header: React.FC = () => {
             </button>
           </Link>
 
-          {/* Кошик */}
           <Link href="/cart">
             <button
               className="relative p-2 rounded-full hover:bg-gray-700 transition"
