@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { debounce } from "lodash";
-import InputMask, { Props as InputMaskProps } from "react-input-mask";
+import InputMask from "react-input-mask";
 import { toast } from "react-hot-toast";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -20,6 +20,7 @@ interface Warehouse {
 
 interface CheckoutFormProps {
   clearCart: () => void;
+  cartItems: any[]; // массив товаров из корзины
 }
 
 const capitalizeWords = (value: string) =>
@@ -28,7 +29,10 @@ const capitalizeWords = (value: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({
+  clearCart,
+  cartItems,
+}) => {
   const [cityQuery, setCityQuery] = useState("");
   const [cities, setCities] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState("");
@@ -50,7 +54,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
     () =>
       debounce(async (query: string) => {
         if (query.length < 3 || query === selectedCity) return;
-
         try {
           const res = await axios.post<NovaPoshtaResponse<City>>(
             "https://api.novaposhta.ua/v2.0/json/",
@@ -58,12 +61,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
               apiKey: "7024283c44e0a9aca63e6cb073fe6f97",
               modelName: "Address",
               calledMethod: "getCities",
-              methodProperties: {
-                FindByString: query,
-              },
+              methodProperties: { FindByString: query },
             }
           );
-
           const list = res.data.data.map((c) => c.Description);
           setCities(list);
         } catch (error) {
@@ -88,12 +88,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
             apiKey: "7024283c44e0a9aca63e6cb073fe6f97",
             modelName: "Address",
             calledMethod: "getWarehouses",
-            methodProperties: {
-              CityName: selectedCity,
-            },
+            methodProperties: { CityName: selectedCity },
           }
         );
-
         const list = res.data.data.map((w) => w.Description);
         setWarehouses(list);
       } catch (error) {
@@ -120,31 +117,99 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
   const confirmOrder = async () => {
     setShowPreview(false);
 
-    const { error } = await supabase.from("orders").insert([
-      {
-        name,
-        surname,
-        phone,
-        email,
-        city: selectedCity,
-        warehouse,
-        comment,
-        status: "pending",
-      },
-    ]);
+    try {
+      const full_name = `${name} ${surname}`.trim();
 
-    if (error) {
-      toast.error("Помилка при оформленні замовлення");
-      console.error(error);
-    } else {
+      // Проверка существующего пользователя
+      const { data: existingUser, error: fetchError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("phone", phone)
+        .single();
+
+      let userId: string | null = null;
+
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("Помилка при пошуку користувача:", fetchError);
+      }
+
+      if (existingUser) {
+        userId = existingUser.id;
+      } else {
+        const { data: newUser, error: userError } = await supabase
+          .from("users")
+          .insert([
+            {
+              full_name,
+              phone,
+              role: "customer",
+              is_active: true,
+            },
+          ])
+          .select()
+          .single();
+
+        if (userError || !newUser) {
+          console.error("Помилка при створенні користувача:", userError);
+          toast.error("Не вдалося створити користувача");
+          return;
+        }
+
+        userId = newUser.id;
+      }
+
+      // Создание заказа
+      const { data: newOrder, error: orderError } = await supabase
+        .from("orders")
+        .insert([
+          {
+            user_id: userId,
+            name,
+            surname,
+            phone,
+            email,
+            city: selectedCity,
+            warehouse,
+            comment,
+            status: "pending",
+          },
+        ])
+        .select()
+        .single();
+
+      if (orderError || !newOrder) {
+        console.error("Помилка при оформленні замовлення:", orderError);
+        toast.error("Помилка при оформленні замовлення");
+        return;
+      }
+
+      // Добавление товаров в order_items
+      const orderItemsPayload = cartItems.map((item) => ({
+        order_id: newOrder.id,
+        product_id: item.id,
+        quantity: item.quantity || 1,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItemsPayload);
+
+      if (itemsError) {
+        console.error(
+          "Помилка при додаванні товарів до замовлення:",
+          itemsError
+        );
+        toast.error("Не вдалося зберегти товари замовлення");
+        return;
+      }
+
       toast.success("Замовлення успішно оформлено!", {
         duration: 4000,
         position: "bottom-center",
       });
 
-      clearCart(); // 👈 очищаем корзину
+      clearCart();
 
-      // Очистка формы
       setName("");
       setSurname("");
       setPhone("");
@@ -153,6 +218,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
       setSelectedCity("");
       setWarehouse("");
       setComment("");
+    } catch (err) {
+      console.error("Невідома помилка при оформленні:", err);
+      toast.error("Сталася невідома помилка");
     }
   };
 
@@ -183,6 +251,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
           required
         />
       </div>
+
       <InputMask
         mask="+380 (99) 999-99-99"
         value={phone}
@@ -219,7 +288,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clearCart }) => {
         type="email"
         id="email"
         name="email"
-        placeholder="Email"
+        placeholder="Email (необов’язково)"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition"

@@ -140,7 +140,12 @@ const CartPage = () => {
           </div>
 
           {/* Правая колонка */}
-          {items.length > 0 && <CheckoutForm clearCart={clearCart} />}
+          {items.length > 0 && (
+            <CheckoutForm
+              clearCart={clearCart}
+              cartItems={items} // ✅ добавляем передачу корзины
+            />
+          )}
         </main>
 
         <Footer />
