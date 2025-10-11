@@ -19,10 +19,12 @@ interface User {
   ordered_items?: OrderedItem[];
 }
 
-const normalize = (value: string) =>
-  value.toLowerCase().replace(/\s+/g, "").replace(/\D/g, "");
+const normalizeText = (value: string): string =>
+  value.toLowerCase().replace(/\s+/g, "");
 
-const UsersAdmin = () => {
+const normalizePhone = (value: string): string => value.replace(/\D/g, "");
+
+const UsersAdmin: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -37,7 +39,7 @@ const UsersAdmin = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.error("Помилка при завантаженні користувачів:", error);
       return;
     }
 
@@ -56,16 +58,17 @@ const UsersAdmin = () => {
     }
   };
 
-  const filteredUsers = users.filter((u) => {
-    const query = normalize(searchQuery);
+  const filteredUsers = users.filter((u: User) => {
+    const queryText = normalizeText(searchQuery);
+    const queryPhone = normalizePhone(searchQuery);
 
-    const nameMatch = normalize(u.full_name).includes(query);
-    const phoneMatch = normalize(u.phone || "").includes(query);
-    const phoneCleanMatch = (u.phone_clean || "").includes(query);
+    const nameMatch = normalizeText(u.full_name).includes(queryText);
+    const phoneMatch = normalizePhone(u.phone || "").includes(queryPhone);
+    const phoneCleanMatch = (u.phone_clean || "").includes(queryPhone);
 
     const productMatch = Array.isArray(u.ordered_items)
-      ? u.ordered_items.some((item) =>
-          normalize(item.name || "").includes(query)
+      ? u.ordered_items.some((item: OrderedItem) =>
+          normalizeText(item.name || "").includes(queryText)
         )
       : false;
 
@@ -95,7 +98,7 @@ const UsersAdmin = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filteredUsers.map((u) => (
+            {filteredUsers.map((u: User) => (
               <tr key={u.id} className="hover:bg-gray-50 transition">
                 <td className="px-4 py-3 font-medium text-gray-800">
                   {u.full_name}
@@ -105,7 +108,7 @@ const UsersAdmin = () => {
                   {Array.isArray(u.ordered_items) &&
                   u.ordered_items.length > 0 ? (
                     <ul className="list-disc pl-4">
-                      {u.ordered_items.map((item, idx) => (
+                      {u.ordered_items.map((item: OrderedItem, idx: number) => (
                         <li key={idx}>
                           {item.name || `Product ${item.product_id}`} ×{" "}
                           {item.quantity || 1}

@@ -2,6 +2,11 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { AdminLayout } from "@/components/admin/Layout";
+import {
+  TrashIcon,
+  PencilSquareIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 
 interface Product {
   id: string;
@@ -77,70 +82,92 @@ const ProductsAdmin = () => {
 
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold mb-6">Products</h1>
-      <Link
-        href="/admin/products/new"
-        className="mb-4 inline-block bg-blue-500 text-white px-4 py-2 rounded"
-      >
-        Add Product
-      </Link>
-      <table className="w-full bg-white rounded shadow">
-        <thead>
-          <tr>
-            <th className="border p-2">Name</th>
-            <th className="border p-2">Category</th>
-            <th className="border p-2">Subcategory</th>
-            <th className="border p-2">Tool Type</th>
-            <th className="border p-2">Price</th>
-            <th className="border p-2">Stock</th>
-            <th className="border p-2">Sales</th>
-            <th className="border p-2">Views</th>
-            <th className="border p-2">Rating</th>
-            <th className="border p-2">Image</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => (
-            <tr key={p.id}>
-              <td className="border p-2">{p.name}</td>
-              <td className="border p-2">{p.category_name}</td>
-              <td className="border p-2">{p.subcategory_name}</td>
-              <td className="border p-2">{p.tool_type_name}</td>
-              <td className="border p-2">{p.price}</td>
-              <td className="border p-2">{p.stock}</td>
-              <td className="border p-2">{p.sales}</td>
-              <td className="border p-2">{p.views}</td>
-              <td className="border p-2">{p.rating}</td>
-              <td className="border p-2">
-                {p.image_url ? (
-                  <img
-                    src={p.image_url}
-                    alt={p.name}
-                    className="h-12 w-12 object-cover"
-                  />
-                ) : (
-                  "-"
-                )}
-              </td>
-              <td className="border p-2 flex gap-2">
-                <Link
-                  href={`/admin/products/${p.id}`}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => deleteProduct(p.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
-              </td>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-extrabold text-gray-800">🧰 Products</h1>
+        <Link
+          href="/admin/products/new"
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Add Product
+        </Link>
+      </div>
+
+      <div className="overflow-x-auto bg-white rounded-xl shadow">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-100 text-gray-700 uppercase tracking-wide text-xs">
+            <tr>
+              <th className="px-4 py-3 text-left">Name</th>
+              <th className="px-4 py-3 text-left">Category</th>
+              <th className="px-4 py-3 text-left">Subcategory</th>
+              <th className="px-4 py-3 text-left">Tool Type</th>
+              <th className="px-4 py-3 text-left">Price</th>
+              <th className="px-4 py-3 text-left">Stock</th>
+              <th className="px-4 py-3 text-left">Sales</th>
+              <th className="px-4 py-3 text-left">Views</th>
+              <th className="px-4 py-3 text-left">Rating</th>
+              <th className="px-4 py-3 text-left">Image</th>
+              <th className="px-4 py-3 text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {products.map((p) => (
+              <tr key={p.id} className="hover:bg-gray-50 transition">
+                <td className="px-4 py-3 font-medium text-gray-800">
+                  {p.name}
+                </td>
+                <td className="px-4 py-3 text-gray-700">{p.category_name}</td>
+                <td className="px-4 py-3 text-gray-700">
+                  {p.subcategory_name}
+                </td>
+                <td className="px-4 py-3 text-gray-700">{p.tool_type_name}</td>
+                <td className="px-4 py-3 text-gray-700">${p.price}</td>
+                <td className="px-4 py-3 text-gray-700">{p.stock}</td>
+                <td className="px-4 py-3 text-gray-700">{p.sales}</td>
+                <td className="px-4 py-3 text-gray-700">{p.views}</td>
+                <td className="px-4 py-3 text-gray-700">{p.rating}</td>
+                <td className="px-4 py-3">
+                  {p.image_url ? (
+                    <img
+                      src={p.image_url}
+                      alt={p.name}
+                      className="h-12 w-12 object-cover rounded border border-gray-300 shadow-sm"
+                    />
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 flex gap-2">
+                  <Link
+                    href={`/admin/products/${p.id}`}
+                    className="inline-flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition"
+                  >
+                    <PencilSquareIcon className="h-4 w-4" />
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => deleteProduct(p.id)}
+                    className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {products.length === 0 && (
+              <tr>
+                <td
+                  colSpan={11}
+                  className="px-4 py-6 text-center text-gray-500"
+                >
+                  No products found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </AdminLayout>
   );
 };
