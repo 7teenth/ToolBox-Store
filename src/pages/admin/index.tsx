@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/Layout";
+import { AdminAuthWrapper } from "@/components/admin/AdminAuthWrapper";
 import { supabase } from "@/lib/supabaseClient";
 import {
   UserIcon,
@@ -93,4 +94,10 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default function ProtectedAdminDashboard() {
+  return (
+    <AdminAuthWrapper>
+      <AdminDashboard />
+    </AdminAuthWrapper>
+  );
+}

@@ -12,6 +12,7 @@ import {
   UserIcon,
   Bars3Icon,
   XMarkIcon,
+  ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 
 const navItems = [
@@ -38,19 +39,22 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mounted, setMounted] = useState(false); // флаг для монтирования
+  const [mounted, setMounted] = useState(false);
 
-  // Загружаем состояние из localStorage при первом рендере
   useEffect(() => {
     const saved = localStorage.getItem("sidebarOpen");
     if (saved !== null) setSidebarOpen(saved === "true");
-    setMounted(true); // после загрузки ставим mounted=true
+    setMounted(true);
   }, []);
 
-  // Сохраняем состояние при изменении
   useEffect(() => {
     if (mounted) localStorage.setItem("sidebarOpen", sidebarOpen.toString());
   }, [sidebarOpen, mounted]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin-auth"); // удаляем авторизацию
+    router.reload(); // перезагружаем страницу, чтобы показать форму логина
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -78,7 +82,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({
           </button>
         </div>
 
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-2 flex-1">
           {navItems.map(({ label, href, icon: Icon }) => {
             const isActive = router.pathname === href;
             return (
@@ -97,6 +101,15 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({
             );
           })}
         </nav>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          className="mt-auto flex items-center gap-3 p-2 rounded-lg hover:bg-red-600 transition-colors text-red-100 hover:text-white"
+        >
+          <ArrowLeftOnRectangleIcon className="h-6 w-6" />
+          {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
+        </button>
       </aside>
 
       {/* Main content */}
