@@ -367,30 +367,28 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       date: r.date,
     })) || [];
 
-  const folderPath = `assets/products/${id}`;
-  let imageUrls: string[] = [];
+  // --- Формируем массив реально существующих картинок ---
+  const fallbackImage = "defaults/product.png";
+  const imageFields = [
+    (product as any).image_url,
+    (product as any).hover_image_url,
+    (product as any).image_3,
+    (product as any).image_4,
+    (product as any).image_5,
+    (product as any).image_6,
+    (product as any).image_7,
+    (product as any).image_8,
+  ];
 
-  try {
-    const { data: files } = await supabase.storage
-      .from("products")
-      .list(folderPath);
-    if (files?.length) {
-      imageUrls = files
-        .filter((f) => f.name.match(/\.(png|jpg|jpeg|webp)$/i))
-        .map((f) => getImageUrl(`${folderPath}/${f.name}`));
-    }
-  } catch (err) {
-    console.error("Image listing error:", err);
+  // оставляем только непустые пути
+  const imageUrls: string[] = imageFields
+    .filter((img) => img && img.trim() !== "")
+    .map((img) => getImageUrl(img));
+
+  // если картинок нет — подставляем fallback
+  if (imageUrls.length === 0) {
+    imageUrls.push(getImageUrl(fallbackImage));
   }
-
-  // Добавляем основное изображение и hover, если нет файлов в папке
-  const addUrl = (path: string | null | undefined) => {
-    if (!path) return;
-    if (!path.startsWith("products/")) imageUrls.push(getImageUrl(path));
-    else imageUrls.push(getImageUrl(path));
-  };
-  addUrl((product as any).image_url);
-  addUrl((product as any).hover_image_url);
 
   return {
     props: {
