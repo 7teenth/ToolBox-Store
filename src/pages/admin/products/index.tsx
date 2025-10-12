@@ -23,6 +23,10 @@ interface Product {
   tool_type_name?: string;
 }
 
+// 🔧 Базовый URL Supabase Storage
+const SUPABASE_BASE_URL =
+  "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products";
+
 const ProductsAdmin = () => {
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -52,7 +56,7 @@ const ProductsAdmin = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.error("Ошибка загрузки продуктов:", error.message);
       return;
     }
 
@@ -74,10 +78,72 @@ const ProductsAdmin = () => {
     setProducts(formatted);
   };
 
-  const deleteProduct = async (id: string) => {
+  const deleteProduct = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
-    await supabase.from("products").delete().eq("id", id);
-    fetchProducts();
+
+    try {
+      // 1️⃣ Удаляем все связанные order_items (если CASCADE не настроен)
+      const { error: orderItemsError } = await supabase
+        .from("order_items")
+        .delete()
+        .eq("product_id", productId);
+      if (orderItemsError) {
+        console.error("Ошибка при удалении order_items:", orderItemsError);
+        return;
+      }
+
+      // 2️⃣ Получаем список файлов в папке продукта
+      const { data: files, error: listError } = await supabase.storage
+        .from("products")
+        .list(`assets/products/${productId}/`);
+
+      if (listError) {
+        console.error("Ошибка при получении файлов для удаления:", listError);
+      } else if (files && files.length > 0) {
+        // формируем массив путей для удаления
+        const pathsToRemove = files.map(
+          (f) => `assets/products/${productId}/${f.name}`
+        );
+        const { error: removeError } = await supabase.storage
+          .from("products")
+          .remove(pathsToRemove);
+
+        if (removeError) {
+          console.error("Ошибка при удалении файлов:", removeError);
+        }
+      }
+
+      // 3️⃣ Удаляем сам продукт
+      const { error: productError } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", productId);
+
+      if (productError) {
+        console.error("Ошибка при удалении продукта:", productError);
+        return;
+      }
+
+      // 4️⃣ Обновляем список продуктов
+      fetchProducts();
+    } catch (e) {
+      console.error("Ошибка при удалении продукта:", e);
+    }
+  };
+
+  // ✅ Исправленный getImageUrl — добавляет "assets/products", если её нет
+  const getImageUrl = (url?: string | null) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+
+    const normalized = url.startsWith("/") ? url.slice(1) : url;
+
+    if (normalized.startsWith("assets/products")) {
+      return `${SUPABASE_BASE_URL}/${normalized}`;
+    }
+
+    // если не содержит, добавляем вручную
+    return `${SUPABASE_BASE_URL}/assets/products/${normalized}`;
   };
 
   return (
@@ -127,9 +193,9 @@ const ProductsAdmin = () => {
                 <td className="px-4 py-3 text-gray-700">{p.views}</td>
                 <td className="px-4 py-3 text-gray-700">{p.rating}</td>
                 <td className="px-4 py-3">
-                  {p.image_url ? (
+                  {getImageUrl(p.image_url) ? (
                     <img
-                      src={p.image_url}
+                      src={getImageUrl(p.image_url)!}
                       alt={p.name}
                       className="h-12 w-12 object-cover rounded border border-gray-300 shadow-sm"
                     />

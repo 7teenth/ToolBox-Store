@@ -1,6 +1,9 @@
 export function getImageUrl(path: string): string {
   if (!path) return "";
 
+  // Если это уже полный URL, возвращаем как есть
+  if (path.startsWith("http")) return path;
+
   // Прибираємо зайві слеші на початку та подвійні дефіси
   const cleaned = path.replace(/^\/+/, "").replace(/--+/g, "-");
   const base =
@@ -26,10 +29,6 @@ export function getImageUrl(path: string): string {
 
   // прибираємо випадкові подвійні слеші чи дефіси
   finalUrl = finalUrl.replace(/([^:])\/{2,}/g, "$1/").replace(/--+/g, "-");
-
-  if (typeof window === "undefined") {
-    console.log("🧩 getImageUrl (server):", path, "→", finalUrl);
-  }
 
   return finalUrl;
 }

@@ -15,6 +15,10 @@ interface Category {
   image_url: string | null;
 }
 
+// 🔧 Базовый URL Supabase Storage
+const SUPABASE_BASE_URL =
+  "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products";
+
 const CategoriesAdmin = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -23,7 +27,11 @@ const CategoriesAdmin = () => {
   }, []);
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from("categories").select("*");
+    const { data, error } = await supabase.from("categories").select("*");
+    if (error) {
+      console.error("Ошибка загрузки категорий:", error.message);
+      return;
+    }
     setCategories(data || []);
   };
 
@@ -31,6 +39,35 @@ const CategoriesAdmin = () => {
     if (!confirm("Are you sure you want to delete this category?")) return;
     await supabase.from("categories").delete().eq("id", id);
     fetchCategories();
+  };
+
+  // ✅ Корректная генерация URL изображения
+  const getImageUrl = (url?: string | null) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+
+    let normalized = url.startsWith("/") ? url.slice(1) : url;
+
+    // если путь начинается с "assets/categories/", используем как есть
+    if (normalized.startsWith("assets/categories/")) {
+      return `${SUPABASE_BASE_URL}/${normalized}`;
+    }
+
+    // если путь содержит повтор "categories/categories/", исправляем
+    normalized = normalized.replace(
+      /^categories\/categories\//,
+      "assets/categories/"
+    );
+
+    // если путь начинается с "categories/", заменяем на "assets/categories/"
+    normalized = normalized.replace(/^categories\//, "assets/categories/");
+
+    // если путь просто файл, добавляем "assets/categories/"
+    if (!normalized.startsWith("assets/categories/")) {
+      normalized = `assets/categories/${normalized}`;
+    }
+
+    return `${SUPABASE_BASE_URL}/${normalized}`;
   };
 
   return (
@@ -60,9 +97,9 @@ const CategoriesAdmin = () => {
             {categories.map((cat) => (
               <tr key={cat.id} className="hover:bg-gray-50 transition">
                 <td className="px-4 py-3">
-                  {cat.image_url ? (
+                  {getImageUrl(cat.image_url) ? (
                     <img
-                      src={cat.image_url}
+                      src={getImageUrl(cat.image_url)!}
                       alt={cat.name}
                       className="w-12 h-12 object-cover rounded-md border hover:scale-105 transition-transform"
                     />

@@ -4,6 +4,35 @@ import { supabase } from "@/lib/supabaseClient";
 import { AdminLayout } from "@/components/admin/Layout";
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 
+// 🔧 Базовый URL Supabase Storage
+const SUPABASE_BASE_URL =
+  "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products";
+
+// ✅ Универсальная функция для корректного отображения URL изображения
+const getImageUrl = (url?: string | null) => {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+
+  let normalized = url.startsWith("/") ? url.slice(1) : url;
+
+  // если путь уже содержит "assets/categories"
+  if (normalized.startsWith("assets/categories/"))
+    return `${SUPABASE_BASE_URL}/${normalized}`;
+
+  // убираем дублирование "categories/categories" или "categories/"
+  normalized = normalized.replace(
+    /^categories\/categories\//,
+    "assets/categories/"
+  );
+  normalized = normalized.replace(/^categories\//, "assets/categories/");
+
+  if (!normalized.startsWith("assets/categories/")) {
+    normalized = `assets/categories/${normalized}`;
+  }
+
+  return `${SUPABASE_BASE_URL}/${normalized}`;
+};
+
 const CategoryForm = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -33,20 +62,31 @@ const CategoryForm = () => {
 
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return imageUrl;
-    const fileName = `${Date.now()}_${imageFile.name}`;
+
+    // сохраняем в папку assets/categories
+    const fileName = `assets/categories/${Date.now()}_${imageFile.name}`;
     const { error } = await supabase.storage
       .from("categories")
       .upload(fileName, imageFile, { upsert: true });
-    if (error) return null;
-    return supabase.storage.from("categories").getPublicUrl(fileName).data
-      .publicUrl;
+
+    if (error) {
+      console.error("Ошибка загрузки изображения:", error.message);
+      return null;
+    }
+
+    const { publicUrl } = supabase.storage
+      .from("categories")
+      .getPublicUrl(fileName).data;
+    return publicUrl;
   };
 
   const saveCategory = async () => {
     if (!name.trim() || !slug.trim())
       return alert("Name and slug are required.");
+
     setLoading(true);
     const finalImageUrl = await uploadImage();
+
     if (id === "new") {
       await supabase
         .from("categories")
@@ -57,6 +97,7 @@ const CategoryForm = () => {
         .update({ name, slug, image_url: finalImageUrl })
         .eq("id", id);
     }
+
     router.push("/admin/categories");
   };
 
@@ -110,7 +151,7 @@ const CategoryForm = () => {
               </label>
               {imageUrl && (
                 <img
-                  src={imageUrl}
+                  src={getImageUrl(imageUrl)!}
                   alt="Preview"
                   className="w-20 h-20 object-cover rounded border"
                 />
