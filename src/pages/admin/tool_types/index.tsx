@@ -58,58 +58,80 @@ const ToolTypesAdmin = () => {
 
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold mb-6">Tool Types</h1>
-      <Link
-        href="/admin/tool_types/new"
-        className="mb-4 inline-block bg-blue-500 text-white px-4 py-2 rounded"
-      >
-        Add Tool Type
-      </Link>
-      <table className="w-full bg-white rounded shadow">
-        <thead>
-          <tr>
-            <th className="border p-2">Name</th>
-            <th className="border p-2">Slug</th>
-            <th className="border p-2">Category</th>
-            <th className="border p-2">Image</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {toolTypes.map((tt) => (
-            <tr key={tt.id}>
-              <td className="border p-2">{tt.name}</td>
-              <td className="border p-2">{tt.slug}</td>
-              <td className="border p-2">{tt.category_name}</td>
-              <td className="border p-2">
-                {tt.image_url ? (
-                  <img
-                    src={tt.image_url}
-                    alt={tt.name}
-                    className="h-12 w-12 object-cover"
-                  />
-                ) : (
-                  "-"
-                )}
-              </td>
-              <td className="border p-2 flex gap-2">
-                <Link
-                  href={`/admin/tool_types/${tt.id}`}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => deleteToolType(tt.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Delete
-                </button>
-              </td>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Tool Types</h1>
+        <Link
+          href="/admin/tool_types/new"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md transition"
+        >
+          + Add Tool Type
+        </Link>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white rounded-xl shadow-lg overflow-hidden">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-3 text-left text-gray-600 uppercase text-sm font-semibold">
+                Name
+              </th>
+              <th className="p-3 text-left text-gray-600 uppercase text-sm font-semibold">
+                Slug
+              </th>
+              <th className="p-3 text-left text-gray-600 uppercase text-sm font-semibold">
+                Category
+              </th>
+              <th className="p-3 text-left text-gray-600 uppercase text-sm font-semibold">
+                Image
+              </th>
+              <th className="p-3 text-left text-gray-600 uppercase text-sm font-semibold">
+                Actions
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {toolTypes.map((tt) => (
+              <tr key={tt.id} className="border-b hover:bg-gray-50 transition">
+                <td className="p-3 text-gray-700">{tt.name}</td>
+                <td className="p-3 text-gray-500 font-mono">{tt.slug}</td>
+                <td className="p-3 text-gray-700">{tt.category_name}</td>
+                <td className="p-3">
+                  {tt.image_url ? (
+                    <img
+                      src={tt.image_url}
+                      alt={tt.name}
+                      className="h-12 w-12 object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <span className="text-gray-400">No image</span>
+                  )}
+                </td>
+                <td className="p-3 flex gap-2">
+                  <Link
+                    href={`/admin/tool_types/${tt.id}`}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg shadow-sm transition"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => deleteToolType(tt.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg shadow-sm transition"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {toolTypes.length === 0 && (
+              <tr>
+                <td colSpan={5} className="p-4 text-center text-gray-400">
+                  No tool types found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </AdminLayout>
   );
 };

@@ -48,14 +48,10 @@ export const ProductCard: React.FC<{
   }, [currentImage]);
 
   const handleMouseEnter = () => {
-    console.log("🖱️ Mouse entered:", product.name);
-    console.log("🔄 Switching to hoverImage:", hoverImage);
     setCurrentImage(hoverImage);
   };
 
   const handleMouseLeave = () => {
-    console.log("🖱️ Mouse left:", product.name);
-    console.log("🔄 Reverting to defaultImage:", defaultImage);
     setCurrentImage(defaultImage);
   };
 
@@ -88,13 +84,10 @@ export const ProductCard: React.FC<{
     }
   };
 
+  const rating = product.rating ?? 0; // безопасная замена для undefined
+
   const stars = Array.from({ length: 5 }, (_, i) => (
-    <span
-      key={i}
-      className={
-        i < (product.rating || 0) ? "text-yellow-400" : "text-gray-300"
-      }
-    >
+    <span key={i} className={i < rating ? "text-yellow-400" : "text-gray-300"}>
       ★
     </span>
   ));
@@ -116,7 +109,7 @@ export const ProductCard: React.FC<{
         href={`/product/${String(product.id)}`}
         className="flex-1 flex flex-col"
       >
-        <div className="relative w-full h-48 overflow-hidden">
+        <div className="relative w-full aspect-[4/5] overflow-hidden">
           <img
             src={defaultImage}
             alt={product.name}
@@ -147,10 +140,10 @@ export const ProductCard: React.FC<{
         <div className="p-4 flex flex-col justify-between h-full">
           <h3 className="font-semibold text-lg">{product.name}</h3>
           <div className="flex items-center gap-2 mt-1">
-            <RatingStars rating={product.rating || 0} />
-            {product.rating > 0 && (
+            <RatingStars rating={rating} />
+            {rating > 0 && (
               <span className="text-sm text-gray-600 font-medium">
-                {product.rating.toFixed(1)} / 5
+                {rating.toFixed(1)} / 5
               </span>
             )}
           </div>
