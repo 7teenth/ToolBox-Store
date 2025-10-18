@@ -1,60 +1,134 @@
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";
 import { AdminLayout } from "@/components/admin/Layout";
-import { FiImage } from "react-icons/fi";
+import { FiImage, FiChevronDown, FiChevronUp } from "react-icons/fi";
 
-export function getImageUrl(path: string): string {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
+// Секция формы
+const sections = [
+  "Основна інформація",
+  "Категорії та типи",
+  "Опис",
+  "Технічні характеристики",
+  "Зображення",
+];
 
-  const cleaned = path.replace(/^\/+/, "").replace(/--+/g, "-");
-  const base =
-    "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/assets";
+// Настройка, какие поля отображать для каждого типа инструмента
+const typeFieldsMap: Record<string, string[]> = {
+  screwdriver: [
+    "weight",
+    "power_type",
+    "power_watts",
+    "torque",
+    "rpm",
+    "speeds",
+    "chuck_diameter",
+    "removable_chuck",
+  ],
+  magnet: ["weight", "power_type"],
+  dril: [
+    "price",
+    "brand",
+    "weight",
+    "power_watts",
+    "torque",
+    "rpm",
+    "speeds",
+    "chuck_diameter",
+    "removable_chuck",
+    "short_description",
+    "description",
+    "image_url",
+    "hover_image_url",
+    "image_3",
+    "image_4",
+    "image_5",
+    "image_6",
+    "image_7",
+    "image_8",
+  ],
+};
 
-  let finalUrl = "";
-
-  if (
-    cleaned.startsWith("categories/") ||
-    cleaned.startsWith("defaults/") ||
-    cleaned.startsWith("logos/") ||
-    cleaned.startsWith("slides/") ||
-    cleaned.startsWith("products/")
-  ) {
-    finalUrl = `${base}/${cleaned}`;
-  } else {
-    finalUrl = `${base}/products/${cleaned}`;
-  }
-
-  return finalUrl.replace(/([^:])\/{2,}/g, "$1/").replace(/--+/g, "-");
+// Простая функция генерации слага из названия
+function generateSlug(text: string) {
+  const map: Record<string, string> = {
+    а: "a",
+    б: "b",
+    в: "v",
+    г: "h",
+    ґ: "g",
+    д: "d",
+    е: "e",
+    є: "ye",
+    ж: "zh",
+    з: "z",
+    и: "y",
+    і: "i",
+    ї: "yi",
+    й: "y",
+    к: "k",
+    л: "l",
+    м: "m",
+    н: "n",
+    о: "o",
+    п: "p",
+    р: "r",
+    с: "s",
+    т: "t",
+    у: "u",
+    ф: "f",
+    х: "kh",
+    ц: "ts",
+    ч: "ch",
+    ш: "sh",
+    щ: "shch",
+    ю: "yu",
+    я: "ya",
+    ь: "",
+    "'": "",
+    " ": "-",
+    ".": "",
+    ",": "",
+    "/": "-",
+  };
+  return text
+    .toLowerCase()
+    .split("")
+    .map((c) => map[c] || c)
+    .join("")
+    .replace(/[^a-z0-9\-]/g, "")
+    .replace(/\-+/g, "-");
 }
 
-const ProductForm = () => {
-  const router = useRouter();
-  const { id } = router.query;
+const ProductForm = ({ productId }: { productId?: string }) => {
+  const [expanded, setExpanded] = useState<string[]>(["Основна інформація"]);
+  const [product, setProduct] = useState<any>({
+    name: "",
+    slug: "",
+    price: 0,
+    brand: "",
+    category_id: null,
+    subcategory_id: null,
+    tool_type_id: null,
+    short_description: "",
+    description: "",
+    weight: null,
+    power_type: "",
+    power_watts: null,
+    torque: null,
+    rpm: null,
+    speeds: null,
+    chuck_diameter: null,
+    removable_chuck: false,
+    image_url: null,
+    hover_image_url: null,
+    image_3: null,
+    image_4: null,
+    image_5: null,
+    image_6: null,
+    image_7: null,
+    image_8: null,
+  });
 
-  // Основные поля
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [price, setPrice] = useState<number>(0);
-  const [brand, setBrand] = useState("");
-  const [stock, setStock] = useState<number>(0);
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [subcategoryId, setSubcategoryId] = useState<string | null>(null);
-  const [toolTypeId, setToolTypeId] = useState<string | null>(null);
-  const [shortDescription, setShortDescription] = useState("");
-  const [description, setDescription] = useState("");
-  const [weight, setWeight] = useState<number | null>(null);
-  const [powerType, setPowerType] = useState("");
-  const [powerWatts, setPowerWatts] = useState<number | null>(null);
-  const [torque, setTorque] = useState<number | null>(null);
-  const [rpm, setRpm] = useState<number | null>(null);
-  const [speeds, setSpeeds] = useState<number | null>(null);
-  const [chuckDiameter, setChuckDiameter] = useState<number | null>(null);
-  const [removableChuck, setRemovableChuck] = useState<boolean>(false);
-  const [rating, setRating] = useState<number>(0);
-
-  // Изображения
   const [imageFiles, setImageFiles] = useState<(File | null)[]>(
     Array(8).fill(null)
   );
@@ -62,65 +136,39 @@ const ProductForm = () => {
     Array(8).fill(null)
   );
 
-  // Опции select
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
-    []
-  );
-  const [subcategories, setSubcategories] = useState<
-    { id: string; name: string; category_id?: string; tool_type_id?: string }[]
-  >([]);
-  const [toolTypes, setToolTypes] = useState<
-    { id: string; name: string; category_id?: string }[]
-  >([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
+  const [toolTypes, setToolTypes] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchOptions();
-    if (id && id !== "new") fetchProduct();
-  }, [id]);
+    if (productId) fetchProduct();
+  }, [productId]);
+
+  useEffect(() => {
+    if (!productId) {
+      setProduct((prev: any) => ({ ...prev, slug: generateSlug(prev.name) }));
+    }
+  }, [product.name]);
 
   const fetchOptions = async () => {
-    const { data: cats } = await supabase.from("categories").select("id, name");
+    const { data: cats } = await supabase.from("categories").select("*");
     setCategories(cats || []);
-
-    const { data: subs } = await supabase
-      .from("subcategories")
-      .select("id, name, category_id, tool_type_id");
+    const { data: subs } = await supabase.from("subcategories").select("*");
     setSubcategories(subs || []);
-
-    const { data: tools } = await supabase
-      .from("tool_types")
-      .select("id, name, category_id");
+    const { data: tools } = await supabase.from("tool_types").select("*");
     setToolTypes(tools || []);
   };
 
   const fetchProduct = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("products")
       .select("*")
-      .eq("id", id)
+      .eq("id", productId)
       .single();
-    if (error || !data) return;
-
-    setName(data.name);
-    setSlug(data.slug || "");
-    setPrice(data.price);
-    setBrand(data.brand || "");
-    setStock(data.stock || 0);
-    setCategoryId(data.category_id);
-    setSubcategoryId(data.subcategory_id);
-    setToolTypeId(data.tool_type_id);
-    setShortDescription(data.short_description || "");
-    setDescription(data.description || "");
-    setWeight(data.weight || null);
-    setPowerType(data.power_type || "");
-    setPowerWatts(data.power_watts || null);
-    setTorque(data.torque || null);
-    setRpm(data.rpm || null);
-    setSpeeds(data.speeds || null);
-    setChuckDiameter(data.chuck_diameter || null);
-    setRemovableChuck(data.removable_chuck || false);
-    setRating(data.rating || 0);
-
+    if (!data) return;
+    setProduct(data);
     setImageUrls([
       data.image_url,
       data.hover_image_url,
@@ -133,24 +181,47 @@ const ProductForm = () => {
     ]);
   };
 
-  const filteredToolTypes = toolTypes.filter(
-    (t) => !categoryId || t.category_id === categoryId
-  );
-  const filteredSubcategories = subcategories.filter(
-    (s) => !categoryId || s.category_id === categoryId
-  );
+  const toggleSection = (name: string) => {
+    setExpanded((prev) =>
+      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
+    );
+  };
+
+  const handleImageChange = (i: number, file: File) => {
+    const newFiles = [...imageFiles];
+    const newUrls = [...imageUrls];
+    newFiles[i] = file;
+    newUrls[i] = URL.createObjectURL(file);
+    setImageFiles(newFiles);
+    setImageUrls(newUrls);
+  };
+
+  const removeImage = (i: number) => {
+    const newFiles = [...imageFiles];
+    const newUrls = [...imageUrls];
+    newFiles[i] = null;
+    newUrls[i] = null;
+    setImageFiles(newFiles);
+    setImageUrls(newUrls);
+  };
 
   const saveProduct = async () => {
+    setSaving(true);
     try {
-      let currentId = id === "new" ? null : (id as string);
+      let currentId = productId || null;
 
-      if (id === "new") {
+      if (!productId) {
         const { data: inserted, error } = await supabase
           .from("products")
-          .insert({ name, slug, price })
+          .insert({ name: product.name, slug: product.slug })
           .select("id")
           .single();
-        if (error || !inserted) return;
+
+        if (error || !inserted) {
+          console.error(error);
+          alert("Помилка при створенні товару");
+          return;
+        }
         currentId = inserted.id;
       }
 
@@ -158,35 +229,15 @@ const ProductForm = () => {
         imageFiles.map(async (file, i) => {
           if (!file) return imageUrls[i];
           const storagePath = `assets/products/${currentId}/${file.name}`;
-          const { data: uploadData, error: uploadError } =
-            await supabase.storage
-              .from("products")
-              .upload(storagePath, file, { upsert: true });
-          if (uploadError) return null;
-          return uploadData.path.replace(/^assets\/products\//, "");
+          const { data: uploadData } = await supabase.storage
+            .from("products")
+            .upload(storagePath, file, { upsert: true });
+          return uploadData?.path.replace(/^assets\/products\//, "");
         })
       );
 
       const payload = {
-        name,
-        slug,
-        price,
-        brand,
-        stock,
-        category_id: categoryId,
-        subcategory_id: subcategoryId,
-        tool_type_id: toolTypeId,
-        short_description: shortDescription,
-        description,
-        weight,
-        power_type: powerType,
-        power_watts: powerWatts,
-        torque,
-        rpm,
-        speeds,
-        chuck_diameter: chuckDiameter,
-        removable_chuck: removableChuck,
-        rating,
+        ...product,
         image_url: uploadedUrls[0],
         hover_image_url: uploadedUrls[1],
         image_3: uploadedUrls[2],
@@ -198,242 +249,358 @@ const ProductForm = () => {
       };
 
       await supabase.from("products").upsert(payload, { onConflict: "id" });
-      router.push("/admin/products");
+      alert("Товар збережено!");
     } catch (e) {
       console.error(e);
+      alert("Помилка при збереженні товару");
+    } finally {
+      setSaving(false);
     }
   };
 
   const inputBase =
     "border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
-  const selectedCategory = categories.find((c) => c.id === categoryId);
+  const filteredSubcategories = subcategories.filter(
+    (s) => !product.category_id || s.category_id === product.category_id
+  );
+  const filteredToolTypes = toolTypes.filter(
+    (t) =>
+      (!product.category_id || t.category_id === product.category_id) &&
+      (!product.subcategory_id || t.subcategory_id === product.subcategory_id)
+  );
+
+  const displayedFields = product.tool_type_id
+    ? typeFieldsMap[
+        toolTypes.find((t) => t.id === product.tool_type_id)?.slug || ""
+      ] || []
+    : [];
 
   return (
     <AdminLayout>
       <h1 className="text-3xl font-bold mb-8">
-        {id === "new" ? "🛠️ Додати товар" : "✏️ Редагувати товар"}
+        {productId ? "✏️ Редагувати товар" : "🛠️ Додати товар"}
       </h1>
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-5xl mx-auto space-y-8">
-        {/* Общая информация */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-700 border-b pb-2">
-            Загальна інформація
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              className={inputBase}
-              placeholder="Назва"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              className={inputBase}
-              placeholder="Slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Ціна"
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-            />
-            <input
-              className={inputBase}
-              placeholder="Бренд"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Кількість на складі"
-              value={stock}
-              onChange={(e) => setStock(Number(e.target.value))}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Рейтинг"
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-            />
-          </div>
-        </section>
-
-        {/* Категории и типы */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-700 border-b pb-2">
-            Категорії та типи
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select
-              className={inputBase}
-              value={categoryId || ""}
-              onChange={(e) => {
-                setCategoryId(e.target.value);
-                setSubcategoryId(null);
-                setToolTypeId(null);
-              }}
+      <div className="space-y-4 max-w-5xl mx-auto">
+        {sections.map((sec) => (
+          <div
+            key={sec}
+            className="bg-white rounded-2xl shadow-lg overflow-hidden"
+          >
+            <button
+              onClick={() => toggleSection(sec)}
+              className="w-full flex justify-between items-center px-6 py-3 text-left font-semibold text-gray-700 hover:bg-gray-100 transition"
             >
-              <option value="">Оберіть категорію</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <select
-              className={inputBase}
-              value={toolTypeId || ""}
-              onChange={(e) => setToolTypeId(e.target.value)}
-            >
-              <option value="">Оберіть тип</option>
-              {filteredToolTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            <select
-              className={inputBase}
-              value={subcategoryId || ""}
-              onChange={(e) => setSubcategoryId(e.target.value)}
-            >
-              <option value="">Оберіть підкатегорію</option>
-              {filteredSubcategories.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </section>
+              {sec}
+              {expanded.includes(sec) ? <FiChevronUp /> : <FiChevronDown />}
+            </button>
+            {expanded.includes(sec) && (
+              <div className="p-6 space-y-4">
+                {sec === "Основна інформація" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className="font-medium text-gray-700">Назва</label>
+                      <input
+                        className={inputBase}
+                        placeholder="Назва товару"
+                        value={product.name}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            name: e.target.value,
+                            slug: generateSlug(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
 
-        {/* Описание */}
-        <section className="space-y-4">
-          <textarea
-            className={inputBase}
-            placeholder="Короткий опис"
-            value={shortDescription}
-            onChange={(e) => setShortDescription(e.target.value)}
-          />
-          <textarea
-            className={inputBase}
-            placeholder="Повний опис"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </section>
+                    <div className="flex flex-col">
+                      <label className="font-medium text-gray-700">Slug</label>
+                      <input
+                        className={inputBase}
+                        placeholder="slug для URL"
+                        value={product.slug || ""}
+                        readOnly
+                      />
+                    </div>
 
-        {/* Дополнительные параметры */}
-        <section className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Вага"
-              value={weight || ""}
-              onChange={(e) => setWeight(Number(e.target.value))}
-            />
-            <input
-              className={inputBase}
-              placeholder="Тип живлення"
-              value={powerType}
-              onChange={(e) => setPowerType(e.target.value)}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Потужність (Вт)"
-              value={powerWatts || ""}
-              onChange={(e) => setPowerWatts(Number(e.target.value))}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Крутний момент"
-              value={torque || ""}
-              onChange={(e) => setTorque(Number(e.target.value))}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Оберти (rpm)"
-              value={rpm || ""}
-              onChange={(e) => setRpm(Number(e.target.value))}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Швидкості"
-              value={speeds || ""}
-              onChange={(e) => setSpeeds(Number(e.target.value))}
-            />
-            <input
-              type="number"
-              className={inputBase}
-              placeholder="Діаметр патрона"
-              value={chuckDiameter || ""}
-              onChange={(e) => setChuckDiameter(Number(e.target.value))}
-            />
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={removableChuck}
-                onChange={(e) => setRemovableChuck(e.target.checked)}
-              />
-              Зйомний патрон
-            </label>
-          </div>
-        </section>
+                    <div className="flex flex-col">
+                      <label className="font-medium text-gray-700">Ціна</label>
+                      <input
+                        type="number"
+                        className={inputBase}
+                        value={product.price}
+                        min={0}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            price: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
 
-        {/* Изображения */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-700 border-b pb-2">
-            Зображення
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {imageUrls.map((url, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 group">
-                <label className="cursor-pointer flex flex-col items-center p-2 border border-dashed rounded-lg hover:border-blue-500 transition w-full h-32 justify-center bg-gray-50">
-                  {url ? (
-                    <img
-                      src={url.startsWith("blob:") ? url : getImageUrl(url)}
-                      alt={`Зображення ${i + 1}`}
-                      className="w-full h-full object-contain rounded-lg"
+                    <div className="flex flex-col">
+                      <label className="font-medium text-gray-700">Бренд</label>
+                      <input
+                        className={inputBase}
+                        value={product.brand || ""}
+                        onChange={(e) =>
+                          setProduct({ ...product, brand: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {sec === "Категорії та типи" && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <select
+                      className={inputBase}
+                      value={product.category_id || ""}
+                      onChange={(e) =>
+                        setProduct({
+                          ...product,
+                          category_id: e.target.value,
+                          subcategory_id: null,
+                          tool_type_id: null,
+                        })
+                      }
+                    >
+                      <option value="">Оберіть категорію</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      className={inputBase}
+                      value={product.subcategory_id || ""}
+                      onChange={(e) =>
+                        setProduct({
+                          ...product,
+                          subcategory_id: e.target.value,
+                          tool_type_id: null,
+                        })
+                      }
+                    >
+                      <option value="">Оберіть підкатегорію</option>
+                      {filteredSubcategories.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      className={inputBase}
+                      value={product.tool_type_id || ""}
+                      onChange={(e) =>
+                        setProduct({ ...product, tool_type_id: e.target.value })
+                      }
+                    >
+                      <option value="">Оберіть тип інструмента</option>
+                      {filteredToolTypes.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {sec === "Опис" && (
+                  <div className="space-y-2">
+                    <textarea
+                      className={inputBase}
+                      placeholder="Короткий опис"
+                      value={product.short_description || ""}
+                      onChange={(e) =>
+                        setProduct({
+                          ...product,
+                          short_description: e.target.value,
+                        })
+                      }
                     />
-                  ) : (
-                    <FiImage className="text-gray-400 text-3xl" />
-                  )}
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      if (!file) return;
-                      const newFiles = [...imageFiles];
-                      const newUrls = [...imageUrls];
-                      newFiles[i] = file;
-                      newUrls[i] = URL.createObjectURL(file);
-                      setImageFiles(newFiles);
-                      setImageUrls(newUrls);
-                    }}
-                  />
-                </label>
+                    <textarea
+                      className={inputBase}
+                      placeholder="Повний опис"
+                      value={product.description || ""}
+                      onChange={(e) =>
+                        setProduct({ ...product, description: e.target.value })
+                      }
+                    />
+                  </div>
+                )}
+
+                {sec === "Технічні характеристики" && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {displayedFields.includes("weight") && (
+                      <input
+                        type="number"
+                        className={inputBase}
+                        placeholder="Вага"
+                        value={product.weight || ""}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            weight: Number(e.target.value),
+                          })
+                        }
+                      />
+                    )}
+                    {displayedFields.includes("power_type") && (
+                      <input
+                        className={inputBase}
+                        placeholder="Тип живлення"
+                        value={product.power_type || ""}
+                        onChange={(e) =>
+                          setProduct({ ...product, power_type: e.target.value })
+                        }
+                      />
+                    )}
+                    {displayedFields.includes("power_watts") && (
+                      <input
+                        type="number"
+                        className={inputBase}
+                        placeholder="Потужність (Вт)"
+                        value={product.power_watts || ""}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            power_watts: Number(e.target.value),
+                          })
+                        }
+                      />
+                    )}
+                    {displayedFields.includes("torque") && (
+                      <input
+                        type="number"
+                        className={inputBase}
+                        placeholder="Крутний момент"
+                        value={product.torque || ""}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            torque: Number(e.target.value),
+                          })
+                        }
+                      />
+                    )}
+                    {displayedFields.includes("rpm") && (
+                      <input
+                        type="number"
+                        className={inputBase}
+                        placeholder="Оберти (rpm)"
+                        value={product.rpm || ""}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            rpm: Number(e.target.value),
+                          })
+                        }
+                      />
+                    )}
+                    {displayedFields.includes("speeds") && (
+                      <input
+                        type="number"
+                        className={inputBase}
+                        placeholder="Швидкості"
+                        value={product.speeds || ""}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            speeds: Number(e.target.value),
+                          })
+                        }
+                      />
+                    )}
+                    {displayedFields.includes("chuck_diameter") && (
+                      <input
+                        type="number"
+                        className={inputBase}
+                        placeholder="Діаметр патрона"
+                        value={product.chuck_diameter || ""}
+                        onChange={(e) =>
+                          setProduct({
+                            ...product,
+                            chuck_diameter: Number(e.target.value),
+                          })
+                        }
+                      />
+                    )}
+                    {displayedFields.includes("removable_chuck") && (
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={product.removable_chuck}
+                          onChange={(e) =>
+                            setProduct({
+                              ...product,
+                              removable_chuck: e.target.checked,
+                            })
+                          }
+                        />
+                        Зйомний патрон
+                      </label>
+                    )}
+                  </div>
+                )}
+
+                {sec === "Зображення" && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {imageUrls.map((url, i) => (
+                      <div
+                        key={i}
+                        className="relative flex flex-col items-center group border rounded-xl overflow-hidden hover:shadow-lg transition"
+                      >
+                        <label className="cursor-pointer flex flex-col items-center justify-center w-full h-32 bg-gray-50 hover:bg-gray-100">
+                          {url ? (
+                            <img
+                              src={url}
+                              alt={`Зображення ${i + 1}`}
+                              className="object-contain w-full h-full transition-transform group-hover:scale-105"
+                            />
+                          ) : (
+                            <FiImage className="text-gray-400 text-4xl" />
+                          )}
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageChange(i, file);
+                            }}
+                          />
+                        </label>
+                        {url && (
+                          <button
+                            onClick={() => removeImage(i)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ))}
+            )}
           </div>
-        </section>
+        ))}
 
         <button
           onClick={saveProduct}
-          className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg"
+          disabled={saving}
+          className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg transition ${
+            saving ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
-          Зберегти
+          {saving ? "Збереження..." : "Зберегти"}
         </button>
       </div>
     </AdminLayout>

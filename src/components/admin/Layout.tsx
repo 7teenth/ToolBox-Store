@@ -16,58 +16,59 @@ import {
 } from "@heroicons/react/24/outline";
 
 const navItems = [
-  { label: "Dashboard", href: "/admin", icon: HomeIcon },
-  { label: "Categories", href: "/admin/categories", icon: TagIcon },
+  { label: "Панель", href: "/admin", icon: HomeIcon },
+  { label: "Категорії", href: "/admin/categories", icon: TagIcon },
+  { label: "Підкатегорії", href: "/admin/subcategories", icon: Squares2X2Icon },
   {
-    label: "Subcategories",
-    href: "/admin/subcategories",
-    icon: Squares2X2Icon,
-  },
-  {
-    label: "Tool Types",
+    label: "Типи інструментів",
     href: "/admin/tool_types",
     icon: WrenchScrewdriverIcon,
   },
-  { label: "Products", href: "/admin/products", icon: CubeIcon },
-  { label: "Reviews", href: "/admin/reviews", icon: StarIcon },
-  { label: "Orders", href: "/admin/orders", icon: ShoppingCartIcon },
-  { label: "Users", href: "/admin/users", icon: UserIcon },
+  { label: "Товари", href: "/admin/products", icon: CubeIcon },
+  { label: "Бренди", href: "/admin/brands", icon: TagIcon }, // новая вкладка
+  { label: "Відгуки", href: "/admin/reviews", icon: StarIcon },
+  { label: "Замовлення", href: "/admin/orders", icon: ShoppingCartIcon },
+  { label: "Користувачі", href: "/admin/users", icon: UserIcon },
 ];
 
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("sidebarOpen");
-    if (saved !== null) setSidebarOpen(saved === "true");
-    setMounted(true);
-  }, []);
+  // Зчитуємо стан панелі з localStorage одразу, без миготіння
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sidebarOpen");
+      return saved ? saved === "true" : true;
+    }
+    return true;
+  });
 
+  // Зберігаємо зміни в localStorage
   useEffect(() => {
-    if (mounted) localStorage.setItem("sidebarOpen", sidebarOpen.toString());
-  }, [sidebarOpen, mounted]);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebarOpen", sidebarOpen.toString());
+    }
+  }, [sidebarOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem("admin-auth"); // удаляем авторизацию
-    router.reload(); // перезагружаем страницу, чтобы показать форму логина
+    localStorage.removeItem("admin-auth"); // видаляємо авторизацію
+    router.reload(); // перезавантажуємо сторінку, щоб показати форму входу
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
+      {/* Бічна панель */}
       <aside
-        className={`bg-gray-900 text-white flex flex-col p-4 ${
-          mounted ? "transition-all duration-300" : ""
-        } ${sidebarOpen ? "w-64" : "w-16"}`}
+        className={`bg-gray-900 text-white flex flex-col p-4 transition-all duration-300 ease-in-out shadow-lg ${
+          sidebarOpen ? "w-64" : "w-16"
+        }`}
       >
         <div className="flex items-center justify-between mb-8">
           {sidebarOpen && (
-            <h2 className="text-2xl font-extrabold tracking-tight">
-              🛠 Admin Panel
+            <h2 className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
+              🛠 Адмін панель
             </h2>
           )}
           <button
@@ -82,15 +83,18 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({
           </button>
         </div>
 
-        <nav className="flex flex-col gap-2 flex-1">
+        {/* Навігація */}
+        <nav className="flex flex-col gap-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/20">
           {navItems.map(({ label, href, icon: Icon }) => {
             const isActive = router.pathname === href;
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center rounded-lg p-2 hover:bg-gray-800 ${
-                  isActive ? "bg-gray-700 text-white" : "text-gray-300"
+                className={`flex items-center rounded-lg p-2 transition-colors ${
+                  isActive
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
                 } ${sidebarOpen ? "gap-3" : "justify-center"}`}
               >
                 <Icon className="h-6 w-6 flex-shrink-0" />
@@ -102,17 +106,17 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({
           })}
         </nav>
 
-        {/* Logout button */}
+        {/* Кнопка виходу */}
         <button
           onClick={handleLogout}
           className="mt-auto flex items-center gap-3 p-2 rounded-lg hover:bg-red-600 transition-colors text-red-100 hover:text-white"
         >
           <ArrowLeftOnRectangleIcon className="h-6 w-6" />
-          {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
+          {sidebarOpen && <span className="text-sm font-medium">Вийти</span>}
         </button>
       </aside>
 
-      {/* Main content */}
+      {/* Основний контент */}
       <main className="flex-1 p-8 overflow-auto">{children}</main>
     </div>
   );

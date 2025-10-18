@@ -1,229 +1,102 @@
-import { GetServerSideProps } from "next";
-import Head from "next/head";
-import { useState, useMemo } from "react";
-import { Layout } from "@/components/Layout";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Header from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { supabase } from "@/lib/supabaseClient";
-import { ProductCard } from "@/components/ProductCard";
-import SortDropdown, { SortOption } from "@/components/SortDropdown";
-import SidebarFilter from "@/components/SidebarFilter";
-import { Category } from "@/components/Categories";
-import { Product } from "@/types/product";
-import { Subcategory } from "@/types/subcategory";
 
-interface Props {
-  category: Category;
-  products: Product[];
+interface Category {
+  id: string;
+  name: string;
+  image_url?: string | null;
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  const slug = params?.slug as string;
+interface Subcategory {
+  id: string;
+  name: string;
+  slug: string;
+  category_id: string;
+}
 
-  const { data: categoryData, error: categoryError } = await supabase
-    .from("categories")
-    .select("*, subcategories(*)")
-    .eq("slug", slug)
-    .single();
+const IMAGE_BASE_URL =
+  "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products/assets/categories/";
 
-  if (categoryError || !categoryData) {
-    return { notFound: true };
-  }
+const SubcategoryPage: React.FC = () => {
+  const router = useRouter();
+  const { slug } = router.query;
 
-  const { data: productsData, error: productsError } = await supabase
-    .from("products")
-    .select("*, tool_types(id, name)")
-    .eq("category_id", categoryData.id);
+  const [subcategory, setSubcategory] = useState<Subcategory | null>(null);
+  const [category, setCategory] = useState<Category | null>(null);
 
-  if (productsError) {
-    console.error("❌ Ошибка загрузки товаров:", productsError.message);
-  }
+  useEffect(() => {
+    if (!slug) return;
+    fetchSubcategory(slug as string);
+  }, [slug]);
 
-  return {
-    props: {
-      category: {
-        id: categoryData.id,
-        name: categoryData.name,
-        image_url: categoryData.image_url,
-        slug: categoryData.slug,
-        subcategories: categoryData.subcategories ?? [],
-      },
-      products: productsData ?? [],
-    },
+  const fetchSubcategory = async (slug: string) => {
+    // Получаем подкатегорию по slug
+    const { data: subs } = await supabase
+      .from("subcategories")
+      .select("id,name,slug,category_id")
+      .eq("slug", slug)
+      .single();
+
+    if (!subs) return;
+    setSubcategory(subs);
+
+    // Получаем категорию
+    const { data: cat } = await supabase
+      .from("categories")
+      .select("id,name,image_url")
+      .eq("id", subs.category_id)
+      .single();
+
+    if (cat) setCategory(cat);
   };
-};
 
-export default function CategoryPage({ category, products }: Props) {
-  const [sortOption, setSortOption] = useState<SortOption>("popular");
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedToolTypes, setSelectedToolTypes] = useState<string[]>([]);
-  const [selectedPowerTypes, setSelectedPowerTypes] = useState<string[]>([]);
-  const [activeSubcategory, setActiveSubcategory] = useState<string | null>(
-    null
-  );
-  const [priceMin, setPriceMin] = useState<number | null>(null);
-  const [priceMax, setPriceMax] = useState<number | null>(null);
+  const getCategoryImageUrl = (url?: string | null) => {
+    if (!url) return IMAGE_BASE_URL + "default.jpg";
+    const fileName = url.split("/").pop();
+    return IMAGE_BASE_URL + fileName;
+  };
 
-  const allPrices = useMemo(
-    () => products.map((p) => p.price ?? 0),
-    [products]
-  );
-
-  const allBrands = useMemo(() => {
-    return [...new Set(products.map((p) => p.brand ?? "").filter(Boolean))];
-  }, [products]);
-
-  const uniqueToolTypes = useMemo(() => {
-    const seen = new Set<string>();
-    return products
-      .map((p) => p.tool_types)
-      .filter((type): type is { id: string; name: string } => {
-        if (!type || !type.id || seen.has(type.id)) return false;
-        seen.add(type.id);
-        return true;
-      });
-  }, [products]);
-
-  const allToolTypes = useMemo(() => {
-    return uniqueToolTypes.map((type) => type.id);
-  }, [uniqueToolTypes]);
-
-  const allPowerTypes = useMemo(() => {
-    return [
-      ...new Set(products.map((p) => p.power_type ?? "").filter(Boolean)),
-    ];
-  }, [products]);
-
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesBrand =
-        selectedBrands.length === 0 || selectedBrands.includes(p.brand ?? "");
-      const matchesToolType =
-        selectedToolTypes.length === 0 ||
-        selectedToolTypes.includes(p.tool_types?.id ?? "");
-      const matchesPowerType =
-        selectedPowerTypes.length === 0 ||
-        selectedPowerTypes.includes(p.power_type ?? "");
-      const matchesSubcategory =
-        !activeSubcategory || p.subcategory_id === activeSubcategory;
-      const matchesPrice =
-        (priceMin === null || (p.price ?? 0) >= priceMin) &&
-        (priceMax === null || (p.price ?? 0) <= priceMax);
-
-      return (
-        matchesBrand &&
-        matchesToolType &&
-        matchesPowerType &&
-        matchesSubcategory &&
-        matchesPrice
-      );
-    });
-  }, [
-    products,
-    selectedBrands,
-    selectedToolTypes,
-    selectedPowerTypes,
-    activeSubcategory,
-    priceMin,
-    priceMax,
-  ]);
-
-  const sortedProducts = useMemo(() => {
-    const sorted = [...filteredProducts];
-
-    switch (sortOption) {
-      case "priceAsc":
-        return sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
-      case "priceDesc":
-        return sorted.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-      case "brandAsc":
-        return sorted.sort((a, b) =>
-          (a.brand ?? "").localeCompare(b.brand ?? "")
-        );
-      case "brandDesc":
-        return sorted.sort((a, b) =>
-          (b.brand ?? "").localeCompare(a.brand ?? "")
-        );
-      default:
-        return sorted;
-    }
-  }, [filteredProducts, sortOption]);
+  if (!subcategory || !category)
+    return (
+      <>
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-600">
+          <p>Завантаження підкатегорії...</p>
+        </main>
+        <Footer />
+      </>
+    );
 
   return (
-    <Layout>
-      <Head>
-        <title>{category.name} – ToolBox Store</title>
-      </Head>
-
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-          <h1 className="text-3xl font-bold text-center sm:text-left">
-            {category.name}
-          </h1>
-          <SortDropdown value={sortOption} onChange={setSortOption} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-          <SidebarFilter
-            subcategories={category.subcategories as Subcategory[]}
-            brands={allBrands}
-            availableBrands={allBrands}
-            selectedBrands={selectedBrands}
-            toolTypes={uniqueToolTypes}
-            availableToolTypes={allToolTypes}
-            selectedToolTypes={selectedToolTypes}
-            powerTypes={allPowerTypes}
-            availablePowerTypes={allPowerTypes}
-            selectedPowerTypes={selectedPowerTypes}
-            activeSubcategory={activeSubcategory}
-            priceMin={priceMin}
-            priceMax={priceMax}
-            allPrices={allPrices}
-            onSubcategorySelect={setActiveSubcategory}
-            onBrandToggle={(brand) =>
-              setSelectedBrands((prev) =>
-                prev.includes(brand)
-                  ? prev.filter((b) => b !== brand)
-                  : [...prev, brand]
-              )
-            }
-            onToolTypeToggle={(type) =>
-              setSelectedToolTypes((prev) =>
-                prev.includes(type)
-                  ? prev.filter((t) => t !== type)
-                  : [...prev, type]
-              )
-            }
-            onPowerTypeToggle={(type) =>
-              setSelectedPowerTypes((prev) =>
-                prev.includes(type)
-                  ? prev.filter((t) => t !== type)
-                  : [...prev, type]
-              )
-            }
-            onPriceMinChange={setPriceMin}
-            onPriceMaxChange={setPriceMax}
-            onResetFilters={() => {
-              setSelectedBrands([]);
-              setSelectedToolTypes([]);
-              setSelectedPowerTypes([]);
-              setActiveSubcategory(null);
-              setPriceMin(null);
-              setPriceMax(null);
-            }}
+    <>
+      <Header />
+      <main className="max-w-7xl mx-auto px-4 py-10">
+        <div className="flex items-center gap-4 mb-6">
+          <img
+            src={getCategoryImageUrl(category.image_url)}
+            alt={category.name}
+            className="w-16 h-16 object-cover rounded-xl border"
           />
-
-          <div>
-            {sortedProducts.length > 0 ? (
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {sortedProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-gray-500">Товари не знайдено.</p>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {subcategory.name}
+          </h1>
         </div>
-      </section>
-    </Layout>
+
+        <p className="text-gray-700 mb-4">
+          Категорія: <strong>{category.name}</strong>
+        </p>
+
+        {/* Тут можно отобразить товары или дополнительную информацию по подкатегории */}
+        <div className="border rounded-xl p-6 bg-gray-50 text-gray-800">
+          Інформація по підкатегорії "{subcategory.name}" буде відображена тут.
+        </div>
+      </main>
+      <Footer />
+    </>
   );
-}
+};
+
+export default SubcategoryPage;

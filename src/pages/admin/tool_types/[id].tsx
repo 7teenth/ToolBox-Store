@@ -2,9 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";
 import { AdminLayout } from "@/components/admin/Layout";
-import { CheckIcon, ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { AdminAuthWrapper } from "@/components/admin/AdminAuthWrapper";
+import { ArrowUpTrayIcon, CheckIcon } from "@heroicons/react/24/outline";
 
-// 🔠 Генерация slug на латинице
+const SUPABASE_BASE_URL =
+  "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products";
+
+// 🔹 Генерація slug
 const generateSlug = (text: string) => {
   if (!text) return "";
   const map: Record<string, string> = {
@@ -59,6 +63,12 @@ const generateSlug = (text: string) => {
     .replace(/^-|-$/g, "");
 };
 
+const getImageUrl = (path?: string | null) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${SUPABASE_BASE_URL}/${path}`;
+};
+
 const ToolTypeForm = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -74,16 +84,17 @@ const ToolTypeForm = () => {
     { id: string; name: string }[]
   >([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 👆 fetch categories и tool type при загрузке
+  // Загрузка категорій і даних типу
   useEffect(() => {
     fetchCategories();
     if (id && id !== "new") fetchToolType();
   }, [id]);
 
-  // 🔄 fetch subcategories при выборе категории
+  // Підвантаження підкатегорій при виборі категорії
   useEffect(() => {
     if (categoryId) fetchSubcategories(categoryId);
     else {
@@ -117,177 +128,213 @@ const ToolTypeForm = () => {
       setCategoryId(data.category_id);
       setSubcategoryId(data.subcategory_id);
       setImageUrl(data.image_url);
+      setPreviewUrl(getImageUrl(data.image_url));
     }
   };
 
-  const uploadImage = async (): Promise<string | null> => {
+  // Попередній перегляд зображення
+  const handleFileChange = (file: File | null) => {
+    setImageFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPreviewUrl(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(imageUrl ? getImageUrl(imageUrl) : null);
+    }
+  };
+
+  // 🔹 Завантаження зображення в папку assets/tool_types
+  const uploadToolTypeImage = async (): Promise<string | null> => {
     if (!imageFile) return imageUrl;
 
+    const cleanName = generateSlug(imageFile.name.replace(/\.[^/.]+$/, ""));
     const fileExt = imageFile.name.split(".").pop();
-    const fileName = `${Date.now()}_${slug || generateSlug(name)}.${fileExt}`;
+
+    // Важливо: путь начинается с assets/tool_types
+    const bucketPath = `assets/tool_types/${Date.now()}_${cleanName}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from("products")
-      .upload(`tool_types/${fileName}`, imageFile, { upsert: true });
+      .upload(bucketPath, imageFile, { upsert: true });
 
     if (error) {
-      console.error("Upload error:", error);
+      console.error("Помилка завантаження файлу:", error.message);
       return null;
     }
 
-    const { data } = supabase.storage
-      .from("products")
-      .getPublicUrl(`tool_types/${fileName}`);
-    return data.publicUrl;
+    return bucketPath;
+  };
+
+  // Перевірка унікальності slug
+  const checkSlugUnique = async (slugToCheck: string) => {
+    const { data } = await supabase
+      .from("tool_types")
+      .select("id")
+      .eq("slug", slugToCheck)
+      .limit(1)
+      .single();
+    if (data && data.id !== id) return false;
+    return true;
   };
 
   const saveToolType = async () => {
     if (!name.trim() || !slug.trim() || !categoryId || !subcategoryId) {
-      alert("Please fill all required fields.");
+      alert("Заповніть всі обов'язкові поля!");
+      return;
+    }
+    setLoading(true);
+
+    const uploadedPath = imageFile ? await uploadToolTypeImage() : imageUrl;
+
+    const slugUnique = await checkSlugUnique(slug);
+    if (!slugUnique) {
+      alert("Slug вже існує!");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    const uploadedUrl = await uploadImage();
     const payload = {
       name,
       slug,
       category_id: categoryId,
       subcategory_id: subcategoryId,
-      image_url: uploadedUrl,
+      image_url: uploadedPath,
     };
 
     try {
-      let res;
       if (id === "new") {
-        res = await supabase.from("tool_types").insert(payload).select();
+        await supabase.from("tool_types").insert(payload).select();
       } else {
-        res = await supabase
-          .from("tool_types")
-          .update(payload)
-          .eq("id", id)
-          .select();
+        await supabase.from("tool_types").update(payload).eq("id", id).select();
       }
-
-      if (res.error) throw res.error;
       router.push("/admin/tool_types");
     } catch (err) {
-      console.error("Supabase error:", err);
-      alert("Failed to save Tool Type");
+      console.error(err);
+      alert("Помилка при збереженні типу інструменту");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AdminLayout>
-      <div className="max-w-md mx-auto mt-10">
-        <h1 className="text-3xl font-extrabold text-gray-800 mb-8">
-          {id === "new" ? "➕ Add Tool Type" : "✏️ Edit Tool Type"}
-        </h1>
+    <AdminAuthWrapper>
+      <AdminLayout>
+        <div className="max-w-2xl mx-auto mt-10">
+          <h1 className="text-3xl font-extrabold text-gray-800 mb-8 text-center">
+            {id === "new" ? "➕ Додати тип інструменту" : "✏️ Редагувати тип"}
+          </h1>
 
-        <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
-          {/* Name */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-gray-700">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => {
-                const val = e.target.value;
-                setName(val);
-                setSlug(generateSlug(val));
-              }}
-              placeholder="e.g. Drills"
-              className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm hover:shadow-md"
-            />
-          </div>
-
-          {/* Slug */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-gray-700">Slug (auto)</label>
-            <div className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-600 font-mono shadow-inner">
-              {slug || "slug-will-appear-here"}
-            </div>
-          </div>
-
-          {/* Category */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-gray-700">Category</label>
-            <select
-              value={categoryId || ""}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm hover:shadow-md"
-            >
-              <option value="">Select Category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Subcategory */}
-          {subcategories.length > 0 && (
+          <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
+            {/* Назва */}
             <div className="flex flex-col gap-2">
-              <label className="font-semibold text-gray-700">Subcategory</label>
+              <label className="font-semibold text-gray-700">Назва</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSlug(generateSlug(e.target.value));
+                }}
+                placeholder="Наприклад: Дрилі"
+                className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+
+            {/* Slug */}
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-gray-700">Slug</label>
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="auto-generated-slug"
+                className="border border-gray-300 rounded-xl px-4 py-3 bg-gray-100 focus:outline-none"
+              />
+            </div>
+
+            {/* Категорія */}
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-gray-700">Категорія</label>
               <select
-                value={subcategoryId || ""}
-                onChange={(e) => setSubcategoryId(e.target.value)}
-                className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm hover:shadow-md"
+                value={categoryId || ""}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
               >
-                <option value="">Select Subcategory</option>
-                {subcategories.map((sc) => (
-                  <option key={sc.id} value={sc.id}>
-                    {sc.name}
+                <option value="">Оберіть категорію</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
             </div>
-          )}
 
-          {/* Image */}
-          <div>
-            <label className="font-semibold text-gray-700 mb-2 inline-block">
-              Image
-            </label>
-            <label className="cursor-pointer inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl border border-gray-300 text-gray-700 transition">
-              <ArrowUpTrayIcon className="h-5 w-5" />
-              Upload
-              <input
-                type="file"
-                className="hidden"
-                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-              />
-            </label>
-            {(imageUrl || imageFile) && (
-              <img
-                src={imageFile ? URL.createObjectURL(imageFile) : imageUrl!}
-                alt="Preview"
-                className="w-32 h-32 mt-3 object-cover rounded-xl border"
-              />
+            {/* Підкатегорія */}
+            {subcategories.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <label className="font-semibold text-gray-700">
+                  Підкатегорія
+                </label>
+                <select
+                  value={subcategoryId || ""}
+                  onChange={(e) => setSubcategoryId(e.target.value)}
+                  className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  <option value="">Оберіть підкатегорію</option>
+                  {subcategories.map((sc) => (
+                    <option key={sc.id} value={sc.id}>
+                      {sc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
-          </div>
 
-          {/* Save Button */}
-          <button
-            onClick={saveToolType}
-            disabled={loading}
-            className={`w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-2xl transition shadow-lg transform hover:scale-105 ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <CheckIcon className="h-5 w-5" />
-            {loading
-              ? "Saving..."
-              : id === "new"
-              ? "Add Tool Type"
-              : "Save Changes"}
-          </button>
+            {/* Фото */}
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-gray-700">Фото</label>
+              <div className="flex items-center gap-4">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-3 bg-gray-100 rounded-xl border hover:bg-gray-200">
+                  <ArrowUpTrayIcon className="h-5 w-5" />
+                  Завантажити
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) =>
+                      handleFileChange(e.target.files?.[0] || null)
+                    }
+                  />
+                </label>
+                {previewUrl && (
+                  <img
+                    src={previewUrl}
+                    alt="Попередній перегляд"
+                    className="w-28 h-28 rounded-xl border object-cover"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Кнопка */}
+            <button
+              onClick={saveToolType}
+              disabled={loading}
+              className={`w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-2xl font-semibold hover:bg-green-700 ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              <CheckIcon className="h-5 w-5" />
+              {loading
+                ? "Збереження..."
+                : id === "new"
+                ? "Додати тип"
+                : "Зберегти зміни"}
+            </button>
+          </div>
         </div>
-      </div>
-    </AdminLayout>
+      </AdminLayout>
+    </AdminAuthWrapper>
   );
 };
 

@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";
 import { AdminLayout } from "@/components/admin/Layout";
+import { AdminAuthWrapper } from "@/components/admin/AdminAuthWrapper";
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 
 const SUPABASE_BASE_URL =
   "https://tsofemmfvfmioiwcsayj.supabase.co/storage/v1/object/public/products";
 
+// 🔹 Функція генерації slug
 const generateSlug = (text: string) => {
   if (!text) return "";
   const map: Record<string, string> = {
@@ -61,6 +63,7 @@ const generateSlug = (text: string) => {
     .replace(/^-|-$/g, "");
 };
 
+// 🔹 Отримання коректного URL зображення
 const getImageUrl = (url?: string | null) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
@@ -83,12 +86,15 @@ const CategoryForm = () => {
   }, [id]);
 
   const fetchCategory = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("categories")
       .select("*")
       .eq("id", id)
       .single();
-
+    if (error) {
+      console.error("Помилка завантаження категорії:", error);
+      return;
+    }
     if (data) {
       setName(data.name);
       setSlug(data.slug);
@@ -97,7 +103,7 @@ const CategoryForm = () => {
     }
   };
 
-  // 🔹 Генерируем preview локально сразу после выбора файла
+  // 🔹 Попередній перегляд зображення після вибору файлу
   const handleFileChange = (file: File | null) => {
     setImageFile(file);
     if (file) {
@@ -109,6 +115,7 @@ const CategoryForm = () => {
     }
   };
 
+  // 🔹 Завантаження зображення в Supabase Storage
   const uploadImageToBucket = async (): Promise<string | null> => {
     if (!imageFile) return imageUrl;
 
@@ -122,116 +129,146 @@ const CategoryForm = () => {
       .upload(bucketPath, imageFile, { upsert: true });
 
     if (error) {
-      console.error("Ошибка загрузки файла:", error.message);
+      console.error("Помилка завантаження файлу:", error.message);
       return null;
     }
 
     return tablePath;
   };
 
+  // 🔹 Перевірка унікальності slug
+  const checkSlugUnique = async (slugToCheck: string) => {
+    const { data } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("slug", slugToCheck)
+      .limit(1)
+      .single();
+    if (data && data.id !== id) return false;
+    return true;
+  };
+
   const saveCategoryToTable = async (finalImagePath: string | null) => {
     const categoryData = { name, slug, image_url: finalImagePath || imageUrl };
 
-    if (id === "new") {
-      await supabase.from("categories").insert(categoryData);
+    const slugUnique = await checkSlugUnique(slug);
+    if (!slugUnique) {
+      alert("Помилка: такий slug вже існує!");
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } =
+      id === "new"
+        ? await supabase.from("categories").insert(categoryData)
+        : await supabase.from("categories").update(categoryData).eq("id", id);
+
+    if (error) {
+      console.error("Помилка збереження категорії:", error);
+      alert("Помилка при збереженні категорії: " + error.message);
     } else {
-      await supabase.from("categories").update(categoryData).eq("id", id);
+      router.push("/admin/categories");
     }
   };
 
   const saveCategory = async () => {
-    if (!name.trim() || !slug.trim())
-      return alert("Name and slug are required.");
+    if (!name.trim() || !slug.trim()) {
+      alert("Назва та slug є обов'язковими полями!");
+      return;
+    }
     setLoading(true);
-
     const uploadedPath = imageFile ? await uploadImageToBucket() : imageUrl;
     await saveCategoryToTable(uploadedPath);
     setLoading(false);
-
-    router.push("/admin/categories");
   };
 
   return (
-    <AdminLayout>
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-10 text-center">
-          {id === "new" ? "➕ Add Category" : "✏️ Edit Category"}
-        </h1>
+    <AdminAuthWrapper>
+      <AdminLayout>
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-10 text-center">
+            {id === "new" ? "➕ Додати категорію" : "✏️ Редагувати категорію"}
+          </h1>
 
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-2xl flex flex-col gap-8 border border-blue-200">
-          {/* Name */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setSlug(generateSlug(e.target.value));
-              }}
-              placeholder="Power Tools"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
-            />
-          </div>
-
-          {/* Slug */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">Slug</label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="power-tools"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
-            />
-          </div>
-
-          {/* Image */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">Image</label>
-            <div className="flex items-center gap-4">
-              <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-3 bg-white rounded-xl border border-gray-300 shadow hover:shadow-lg transition-all text-indigo-700 font-medium hover:bg-indigo-50">
-                <ArrowUpTrayIcon className="h-6 w-6" />
-                Upload
-                <input
-                  type="file"
-                  className="hidden"
-                  onChange={(e) =>
-                    handleFileChange(e.target.files?.[0] || null)
-                  }
-                />
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-2xl flex flex-col gap-8 border border-blue-200">
+            {/* Назва */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700">
+                Назва
               </label>
-              {previewUrl && (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-28 h-28 rounded-xl border border-gray-300 object-cover shadow-md transition-all"
-                />
-              )}
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSlug(generateSlug(e.target.value));
+                }}
+                placeholder="Наприклад: Електроінструменти"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              />
             </div>
-          </div>
 
-          {/* Save Button */}
-          <button
-            onClick={saveCategory}
-            disabled={loading}
-            className={`w-full py-3 rounded-2xl text-white font-bold text-lg transition-all
-              ${
+            {/* Slug */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700">
+                Slug
+              </label>
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="elektroinstrumenty"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              />
+            </div>
+
+            {/* Зображення */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700">
+                Зображення
+              </label>
+              <div className="flex items-center gap-4">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-3 bg-white rounded-xl border border-gray-300 shadow hover:shadow-lg transition-all text-indigo-700 font-medium hover:bg-indigo-50">
+                  <ArrowUpTrayIcon className="h-6 w-6" />
+                  Завантажити
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) =>
+                      handleFileChange(e.target.files?.[0] || null)
+                    }
+                  />
+                </label>
+                {previewUrl && (
+                  <img
+                    src={previewUrl}
+                    alt="Попередній перегляд"
+                    className="w-28 h-28 rounded-xl border border-gray-300 object-cover shadow-md transition-all"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Кнопка збереження */}
+            <button
+              onClick={saveCategory}
+              disabled={loading}
+              className={`w-full py-3 rounded-2xl text-white font-bold text-lg transition-all ${
                 loading
                   ? "bg-green-400 cursor-not-allowed"
                   : "bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-2xl"
-              }
-            `}
-          >
-            {loading
-              ? "Saving..."
-              : id === "new"
-              ? "Add Category"
-              : "Save Changes"}
-          </button>
+              }`}
+            >
+              {loading
+                ? "Збереження..."
+                : id === "new"
+                ? "Додати категорію"
+                : "Зберегти зміни"}
+            </button>
+          </div>
         </div>
-      </div>
-    </AdminLayout>
+      </AdminLayout>
+    </AdminAuthWrapper>
   );
 };
 

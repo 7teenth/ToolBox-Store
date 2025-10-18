@@ -27,22 +27,43 @@ export const Categories: React.FC<CategoriesProps> = ({ categories }) => {
           );
 
           return (
-            <Link
+            <div
               key={cat.id}
-              href={`/catalog/${cat.slug || cat.id}`}
               className="category-card bg-white p-4 rounded-lg shadow hover:shadow-lg hover:scale-105 transition-transform cursor-pointer flex flex-col items-center"
             >
-              <div className="relative w-full h-32 mb-2">
-                <Image
-                  src={imageSrc}
-                  alt={cat.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 20vw"
-                  className="object-cover rounded transition-opacity duration-300"
-                />
-              </div>
-              <h3 className="text-lg font-semibold text-center">{cat.name}</h3>
-            </Link>
+              <Link
+                href={`/catalog/${cat.slug || cat.id}`}
+                className="w-full flex flex-col items-center"
+              >
+                <div className="relative w-full h-32 mb-2">
+                  <Image
+                    src={imageSrc}
+                    alt={cat.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 20vw"
+                    className="object-cover rounded transition-opacity duration-300"
+                  />
+                </div>
+                <h3 className="text-lg font-semibold text-center mb-2">
+                  {cat.name}
+                </h3>
+              </Link>
+
+              {/* Подкатегории */}
+              {cat.subcategories && cat.subcategories.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-2 mt-2">
+                  {cat.subcategories.map((sub) => (
+                    <Link
+                      key={sub.id}
+                      href={`/catalog/${cat.slug || cat.id}/${sub.slug}`}
+                      className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded-full transition"
+                    >
+                      {sub.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

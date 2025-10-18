@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";
 import { AdminLayout } from "@/components/admin/Layout";
-import { CheckIcon } from "@heroicons/react/24/outline";
+import { AdminAuthWrapper } from "@/components/admin/AdminAuthWrapper";
 
-// 🔠 Генерация slug с латиницей
+// 🔠 Генерация slug
 const generateSlug = (text: string) => {
   if (!text) return "";
   const map: Record<string, string> = {
@@ -66,9 +66,7 @@ const SubcategoryForm = () => {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
-    []
-  );
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -76,39 +74,71 @@ const SubcategoryForm = () => {
     if (id && id !== "new") fetchSubcategory();
   }, [id]);
 
+  // 🔹 Загрузка списка категорий
   const fetchCategories = async () => {
-    const { data: cats } = await supabase.from("categories").select("id, name");
-    setCategories(cats || []);
+    const { data } = await supabase
+      .from("categories")
+      .select("id,name")
+      .order("name");
+    setCategories(data || []);
   };
 
+  // 🔹 Загрузка подкатегории
   const fetchSubcategory = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("subcategories")
-      .select("*")
+      .select("id,name,slug,category_id")
       .eq("id", id)
       .single();
-    if (error) {
-      console.error(error);
-      return;
+
+    if (data) {
+      setName(data.name);
+      setSlug(data.slug);
+      setCategoryId(data.category_id);
     }
-    setName(data.name);
-    setSlug(data.slug);
-    setCategoryId(data.category_id);
   };
 
+  // 🔹 Сохранение подкатегории
   const saveSubcategory = async () => {
-    if (!name.trim() || !slug.trim() || !categoryId) {
-      alert("Please fill all required fields.");
+    if (!name.trim() || !slug.trim()) {
+      alert("Название и slug обязательны");
       return;
     }
 
     setLoading(true);
-    const payload = { name, slug, category_id: categoryId };
+
+    let uniqueSlug = slug;
 
     if (id === "new") {
-      await supabase.from("subcategories").insert(payload);
+      // 🔹 Генерация уникального slug
+      let i = 1;
+      while (true) {
+        const { data } = await supabase
+          .from("subcategories")
+          .select("id")
+          .eq("slug", uniqueSlug)
+          .limit(1);
+        if (!data || data.length === 0) break;
+        uniqueSlug = `${slug}-${i}`;
+        i++;
+      }
+
+      const { data, error } = await supabase
+        .from("subcategories")
+        .insert({ name, slug: uniqueSlug, category_id: categoryId })
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error(error);
+        setLoading(false);
+        return;
+      }
     } else {
-      await supabase.from("subcategories").update(payload).eq("id", id);
+      await supabase
+        .from("subcategories")
+        .update({ name, slug: uniqueSlug, category_id: categoryId })
+        .eq("id", id);
     }
 
     setLoading(false);
@@ -116,72 +146,86 @@ const SubcategoryForm = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="max-w-md mx-auto mt-10 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
-        <h1 className="text-3xl font-extrabold text-gray-800 mb-8">
-          {id === "new" ? "➕ Add Subcategory" : "✏️ Edit Subcategory"}
-        </h1>
+    <AdminAuthWrapper>
+      <AdminLayout>
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-10 text-center">
+            {id === "new"
+              ? "➕ Добавить подкатегорию"
+              : "✏️ Редактировать подкатегорию"}
+          </h1>
 
-        <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
-          {/* Name */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-gray-700">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => {
-                const newName = e.target.value;
-                setName(newName);
-                setSlug(generateSlug(newName));
-              }}
-              placeholder="e.g. Drills"
-              className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm hover:shadow-md w-full"
-            />
-          </div>
-
-          {/* Slug (реальное отображение) */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-gray-700">Slug (auto)</label>
-            <div className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-600 font-mono shadow-inner break-words">
-              {slug || "slug-will-appear-here"}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-2xl flex flex-col gap-6 border border-blue-200">
+            {/* Название */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700">
+                Название
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSlug(generateSlug(e.target.value));
+                }}
+                placeholder="Например: Лазерный уровень"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              />
             </div>
-          </div>
 
-          {/* Category */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-gray-700">Category</label>
-            <select
-              value={categoryId || ""}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm hover:shadow-md w-full"
+            {/* Slug */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700">
+                Slug
+              </label>
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="laser-level"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              />
+            </div>
+
+            {/* Категория */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700">
+                Категория
+              </label>
+              <select
+                value={categoryId || ""}
+                onChange={(e) => setCategoryId(e.target.value || null)}
+                className="w-full px-4 py-2 rounded border"
+              >
+                <option value="">– Без категории –</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Кнопка */}
+            <button
+              onClick={saveSubcategory}
+              disabled={loading}
+              className={`w-full py-3 rounded-2xl text-white font-bold text-lg transition-all ${
+                loading
+                  ? "bg-green-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-2xl"
+              }`}
             >
-              <option value="">Select Category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              {loading
+                ? "Сохранение..."
+                : id === "new"
+                ? "Добавить подкатегорию"
+                : "Сохранить изменения"}
+            </button>
           </div>
-
-          {/* Save button */}
-          <button
-            onClick={saveSubcategory}
-            disabled={loading}
-            className={`w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-2xl transition shadow-lg transform hover:scale-105 ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <CheckIcon className="h-5 w-5" />
-            {loading
-              ? "Saving..."
-              : id === "new"
-              ? "Add Subcategory"
-              : "Save Changes"}
-          </button>
         </div>
-      </div>
-    </AdminLayout>
+      </AdminLayout>
+    </AdminAuthWrapper>
   );
 };
 
