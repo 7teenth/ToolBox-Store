@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+// Use a native <img> here to avoid forwarding newer Next/Image props
+// (like fetchPriority) into DOM elements which can trigger React warnings.
 import { getImageUrl } from "../lib/getImageUrl";
 import { Subcategory } from "../types/subcategory";
 
@@ -35,13 +36,16 @@ export const Categories: React.FC<CategoriesProps> = ({ categories }) => {
                 href={`/catalog/${cat.slug || cat.id}`}
                 className="w-full flex flex-col items-center"
               >
-                <div className="relative w-full h-32 mb-2">
-                  <Image
+                <div className="w-full h-32 mb-2 overflow-hidden rounded">
+                  <img
                     src={imageSrc}
                     alt={cat.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 20vw"
-                    className="object-cover rounded transition-opacity duration-300"
+                    className="w-full h-full object-cover rounded transition-opacity duration-300"
+                    onError={(e) => {
+                      e.currentTarget.src = getImageUrl(
+                        "defaults/default-category.png"
+                      );
+                    }}
                   />
                 </div>
                 <h3 className="text-lg font-semibold text-center mb-2">

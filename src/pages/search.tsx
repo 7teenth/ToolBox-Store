@@ -69,11 +69,29 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const q = (query.query as string) || "";
 
   // Поиск товаров
-  const { data: products } = await supabase
+  const { data: rawProducts } = await supabase
     .from("products")
     .select("*")
     .ilike("name", `%${q}%`)
     .limit(50);
+
+  const products = (rawProducts || []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description || "",
+    short_description: p.short_description || "",
+    price: p.price ?? 0,
+    image_url: p.image_url || "",
+    hover_image_url: p.hover_image_url || "",
+    brand: p.brand || "",
+    stock: p.stock ?? null,
+    status:
+      typeof p.stock === "number"
+        ? p.stock > 0
+          ? "В наявності"
+          : "Не в наявності"
+        : p.status ?? "В наявності",
+  }));
 
   // Поиск категорий
   const { data: categories } = await supabase

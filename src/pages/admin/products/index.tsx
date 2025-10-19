@@ -13,9 +13,6 @@ interface Product {
   name: string;
   price: number;
   brand?: string | null;
-  stock: number;
-  sales: number;
-  views: number;
   rating: number;
   image_url?: string | null;
   category_name: string;
@@ -37,7 +34,7 @@ const ProductsAdmin = () => {
   const fetchProducts = async () => {
     setLoading(true);
 
-    // 🔹 Запрос с join на категории, подкатегории и типы инструментов
+    // 🔹 Запит: приєднуємо категорію, підкатегорію та тип інструмента
     const { data, error } = await supabase
       .from("products")
       .select(
@@ -46,9 +43,6 @@ const ProductsAdmin = () => {
         name,
         price,
         brand,
-        stock,
-        sales,
-        views,
         rating,
         image_url,
         categories(name),
@@ -64,16 +58,13 @@ const ProductsAdmin = () => {
       return;
     }
 
-    console.log("Raw products:", data); // Для отладки
+    console.log("Raw products:", data); // Для налагодження
 
     const formatted: Product[] = (data || []).map((p: any) => ({
       id: p.id,
       name: p.name,
       price: p.price,
       brand: p.brand,
-      stock: p.stock ?? 0,
-      sales: p.sales ?? 0,
-      views: p.views ?? 0,
       rating: p.rating ?? 0,
       image_url: p.image_url ?? null,
       category_name: p.categories?.name ?? "-",
@@ -141,13 +132,13 @@ const ProductsAdmin = () => {
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-extrabold text-gray-800">🧰 Products</h1>
+        <h1 className="text-3xl font-extrabold text-gray-800">🧰 Товари</h1>
         <Link
           href="/admin/products/new"
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
         >
           <PlusIcon className="h-5 w-5" />
-          Add Product
+          Додати товар
         </Link>
       </div>
 
@@ -155,36 +146,27 @@ const ProductsAdmin = () => {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100 text-gray-700 uppercase tracking-wide text-xs">
             <tr>
-              <th className="px-4 py-3 text-left">Name</th>
-              <th className="px-4 py-3 text-left">Category</th>
-              <th className="px-4 py-3 text-left">Subcategory</th>
-              <th className="px-4 py-3 text-left">Tool Type</th>
-              <th className="px-4 py-3 text-left">Price</th>
-              <th className="px-4 py-3 text-left">Stock</th>
-              <th className="px-4 py-3 text-left">Sales</th>
-              <th className="px-4 py-3 text-left">Views</th>
-              <th className="px-4 py-3 text-left">Rating</th>
-              <th className="px-4 py-3 text-left">Image</th>
-              <th className="px-4 py-3 text-left">Actions</th>
+              <th className="px-4 py-3 text-left">Назва</th>
+              <th className="px-4 py-3 text-left">Категорія</th>
+              <th className="px-4 py-3 text-left">Підкатегорія</th>
+              <th className="px-4 py-3 text-left">Тип</th>
+              <th className="px-4 py-3 text-left">Ціна</th>
+              <th className="px-4 py-3 text-left">Рейтинг</th>
+              <th className="px-4 py-3 text-left">Фото</th>
+              <th className="px-4 py-3 text-left">Дії</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <tr>
-                <td
-                  colSpan={11}
-                  className="px-4 py-6 text-center text-gray-500"
-                >
-                  Loading...
+                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                  Завантаження...
                 </td>
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td
-                  colSpan={11}
-                  className="px-4 py-6 text-center text-gray-500"
-                >
-                  No products found.
+                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                  Товарів не знайдено.
                 </td>
               </tr>
             ) : (
@@ -201,9 +183,6 @@ const ProductsAdmin = () => {
                     {p.tool_type_name}
                   </td>
                   <td className="px-4 py-3 text-gray-700">${p.price}</td>
-                  <td className="px-4 py-3 text-gray-700">{p.stock}</td>
-                  <td className="px-4 py-3 text-gray-700">{p.sales}</td>
-                  <td className="px-4 py-3 text-gray-700">{p.views}</td>
                   <td className="px-4 py-3 text-gray-700">{p.rating}</td>
                   <td className="px-4 py-3">
                     {getImageUrl(p.image_url) ? (
@@ -222,14 +201,14 @@ const ProductsAdmin = () => {
                       className="inline-flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition"
                     >
                       <PencilSquareIcon className="h-4 w-4" />
-                      Edit
+                      Редагувати
                     </Link>
                     <button
                       onClick={() => deleteProduct(p.id)}
                       className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
                     >
                       <TrashIcon className="h-4 w-4" />
-                      Delete
+                      Видалити
                     </button>
                   </td>
                 </tr>

@@ -27,6 +27,6 @@
     "admin/**/*.ts",
     "admin/**/*.tsx",
     "**/*.d.ts"
-  ],
+, "src/pages/catalog/tool-type"  ],
   "exclude": ["node_modules"]
 }

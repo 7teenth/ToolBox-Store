@@ -89,8 +89,62 @@ export default function ProductPage({
     }, 250);
   };
 
+  // Build a list of characteristic label/value pairs from available product fields
+  const specsList: { label: string; value: string | number | boolean }[] = [];
+  const p: any = product;
+  const pushIf = (label: string, value: any) => {
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      specsList.push({ label, value });
+    }
+  };
+
+  // Common buyer-facing specs (use DB field names where possible)
+  pushIf("Виробник", p.brand);
+  // Power: use power_watts or power
+  pushIf("Потужність (Вт)", p.power_watts ?? p.power ?? null);
+  pushIf("Тип живлення", p.power_type);
+  pushIf("Крутний момент", p.torque);
+  pushIf("Діаметр патрона", p.chuck_diameter);
+  pushIf("Обороти (об/хв)", p.rpm);
+  pushIf("Кількість швидкостей", p.speeds);
+  if (typeof p.removable_chuck === "boolean")
+    pushIf("Знімний патрон", p.removable_chuck ? "Так" : "Ні");
+  pushIf("Вага (кг)", p.weight);
+  // Do not include internal fields like rating or status in the buyer-facing specs list
+
+  // Merge any free-form specs on the product (if present)
+  if (Array.isArray(p.specs)) {
+    p.specs.forEach((s: any) => {
+      if (s && s.key && s.value !== undefined && s.value !== null) {
+        pushIf(s.key, s.value);
+      }
+    });
+  }
+
+  // Determine availability: prefer an explicit `status` field coming from DB when present,
+  // otherwise fall back to numeric `stock` if available.
+  const statusDefined =
+    typeof product.status === "string" && product.status.trim() !== "";
+  const hasStock = statusDefined
+    ? product.status.trim().toLowerCase() === "в наявності"
+    : typeof product.stock === "number"
+    ? product.stock > 0
+    : false;
+
+  const displayStock = statusDefined
+    ? product.status
+    : typeof product.stock === "number"
+    ? product.stock
+    : hasStock
+    ? "Є"
+    : "Немає";
+
   const increment = () =>
-    setQuantity((q) => Math.min(q + 1, product.stock || 1));
+    setQuantity((q) => {
+      // If numeric stock is available, don't exceed it. Otherwise allow increasing (limit 99).
+      const max = typeof product.stock === "number" ? product.stock : 99;
+      return Math.min(q + 1, Math.max(1, max));
+    });
   const decrement = () => setQuantity((q) => Math.max(q - 1, 1));
 
   const handleAddToCart = () => {
@@ -215,9 +269,7 @@ export default function ProductPage({
             </span>
             <p className="text-sm text-gray-500">
               В наявності:{" "}
-              <span className="font-medium text-gray-800">
-                {product.stock > 0 ? product.stock : "Немає"}
-              </span>
+              <span className="font-medium text-gray-800">{displayStock}</span>
             </p>
 
             <div className="mt-5 flex items-center gap-4">
@@ -239,10 +291,10 @@ export default function ProductPage({
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <button
-              disabled={product.stock === 0}
+              disabled={!hasStock}
               onClick={handleAddToCart}
               className={`flex-1 px-5 py-3 rounded-lg text-lg text-white font-medium transition-colors ${
-                product.stock === 0
+                !hasStock
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700"
               }`}
@@ -250,10 +302,10 @@ export default function ProductPage({
               У кошик
             </button>
             <button
-              disabled={product.stock === 0}
+              disabled={!hasStock}
               onClick={handleOrderNow}
               className={`flex-1 px-5 py-3 rounded-lg text-lg text-white font-medium transition-colors ${
-                product.stock === 0
+                !hasStock
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-green-600 hover:bg-green-700"
               }`}
@@ -303,11 +355,24 @@ export default function ProductPage({
                     "Опис товару наразі недоступний."}
                 </p>
               ) : activeTab === "specs" ? (
-                <ul className="list-disc ml-6 text-gray-700 space-y-1">
-                  {product.power && <li>Потужність: {product.power}</li>}
-                  {product.weight && <li>Вага: {product.weight}</li>}
-                  {product.brand && <li>Виробник: {product.brand}</li>}
-                </ul>
+                specsList.length > 0 ? (
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {specsList.map((s, i) => (
+                      <div key={i} className="bg-white p-3 rounded shadow-sm">
+                        <dt className="text-sm text-gray-600">{s.label}</dt>
+                        <dd className="mt-1 text-sm font-medium text-gray-800">
+                          {typeof s.value === "boolean"
+                            ? s.value
+                              ? "Так"
+                              : "Ні"
+                            : String(s.value)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <p className="text-gray-600">Характеристики відсутні.</p>
+                )
               ) : (
                 <div className="space-y-8">
                   <ReviewList reviews={reviews} />
@@ -327,7 +392,7 @@ export default function ProductPage({
             <ProductCard
               key={prod.id}
               product={prod}
-              isPopular={prod.sales > 50} // можно любой критерий популярности
+              isPopular={(prod.sales ?? 0) > 50} // можно любой критерий популярности
             />
           ))}
         </div>
@@ -348,11 +413,45 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   if (productError || !product) return { notFound: true };
 
-  const { data: similarProducts } = await supabase
+  const { data: rawSimilarProducts } = await supabase
     .from("products")
-    .select("*, tool_types(name)")
+    .select("*, tool_types(id, name), categories(name)")
     .neq("id", id)
     .limit(4);
+
+  const similarProducts: Product[] = (rawSimilarProducts || []).map(
+    (p: any) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: p.price ?? 0,
+      brand: p.brand || "",
+      description: p.description || "",
+      short_description: p.short_description || "",
+      image_url: p.image_url || "",
+      hover_image_url: p.hover_image_url || "",
+      category: p.categories?.name || "",
+      subcategory_id: p.subcategory_id ?? null,
+      views: p.views ?? 0,
+      sales: p.sales ?? 0,
+      rating: p.rating ?? 0,
+      weight: p.weight ?? null,
+      power: p.power_watts ?? null,
+      power_type: p.power_type ?? null,
+      is_brushless: p.power_type === "Безщітковий",
+      chuck_diameter: p.chuck_diameter ?? null,
+      rpm: p.rpm ?? null,
+      speeds: p.speeds ?? null,
+      removable_chuck: p.removable_chuck ?? null,
+      tool_types: p.tool_types
+        ? { id: p.tool_types.id, name: p.tool_types.name }
+        : undefined,
+      stock: p.stock ?? 0,
+      status: (p.stock ?? 0) > 0 ? "В наявності" : "Не в наявності",
+      features: {},
+      specs: [],
+    })
+  );
 
   const { data: rawReviews } = await supabase
     .from("reviews")

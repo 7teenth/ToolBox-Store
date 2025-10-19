@@ -43,4 +43,6 @@ export interface Product {
     key: string;
     value: string | number | boolean;
   }[];
+
+  status: "В наявності" | "Не в наявності"; 
 }

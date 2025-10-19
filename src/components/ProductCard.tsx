@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Product } from "../types/product";
 import { getImageUrl } from "../lib/getImageUrl";
@@ -7,11 +7,19 @@ import { useCompare } from "@/context/CompareContext";
 import { toast } from "react-hot-toast";
 import { RatingStars } from "./RatingStars";
 
-export const ProductCard: React.FC<{
+interface ProductCardProps {
   product: Product;
   isPopular?: boolean;
-}> = ({ product, isPopular }) => {
-  const stock = Number(product.stock ?? 0);
+}
+
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  isPopular,
+}) => {
+  // Determine availability: prefer numeric `stock` when present, otherwise fall back to `status` string.
+  const inStock =
+    (typeof product.stock === "number" ? product.stock > 0 : undefined) ??
+    (product.status || "").trim().toLowerCase() === "в наявності";
 
   const defaultImage = getImageUrl(
     product.image_url || "defaults/default-product.png"
@@ -27,8 +35,7 @@ export const ProductCard: React.FC<{
   const { addItem } = useCart();
   const { addItem: addToCompare, items: comparedItems } = useCompare();
 
-  const normalize = (str: string | undefined | null) =>
-    (str || "").trim().toLowerCase();
+  const normalize = (str?: string | null) => (str || "").trim().toLowerCase();
 
   const currentType = normalize(product.tool_types?.name);
   const comparedType = normalize(comparedItems[0]?.tool_types?.name);
@@ -37,26 +44,11 @@ export const ProductCard: React.FC<{
     comparedItems.length === 0 ||
     (!!currentType && !!comparedType && currentType === comparedType);
 
-  useEffect(() => {
-    console.log("✅ ProductCard rendered:", product.name);
-    console.log("🖼 defaultImage:", defaultImage);
-    console.log("🖼 hoverImage:", hoverImage);
-  }, []);
-
-  useEffect(() => {
-    console.log("🖼 currentImage changed:", currentImage);
-  }, [currentImage]);
-
-  const handleMouseEnter = () => {
-    setCurrentImage(hoverImage);
-  };
-
-  const handleMouseLeave = () => {
-    setCurrentImage(defaultImage);
-  };
+  const handleMouseEnter = () => setCurrentImage(hoverImage);
+  const handleMouseLeave = () => setCurrentImage(defaultImage);
 
   const handleAddToCart = () => {
-    if (stock > 0) {
+    if (inStock) {
       addItem({
         id: String(product.id),
         name: product.name,
@@ -65,6 +57,8 @@ export const ProductCard: React.FC<{
         image: defaultImage,
       });
       toast.success("Додано до кошика!");
+    } else {
+      toast.error("Товар відсутній на складі");
     }
   };
 
@@ -75,29 +69,24 @@ export const ProductCard: React.FC<{
     }
 
     if (isCompatible) {
-      addToCompare(product);
-      toast.success("Додано до порівняння!");
-    } else {
+      const statusDefined =
+        typeof product.status === "string" && product.status.trim() !== "";
+      const inStock = statusDefined
+        ? product.status.trim().toLowerCase() === "в наявності"
+        : typeof product.stock === "number"
+        ? product.stock > 0
+        : false;
       toast.error(
         `Неможливо порівняти: тип "${product.tool_types?.name}" не збігається з "${comparedItems[0]?.tool_types?.name}"`
       );
     }
   };
 
-  const rating = product.rating ?? 0; // безопасная замена для undefined
+  const rating = product.rating ?? 0;
 
-  const stars = Array.from({ length: 5 }, (_, i) => (
-    <span key={i} className={i < rating ? "text-yellow-400" : "text-gray-300"}>
-      ★
-    </span>
-  ));
-
-  const availability =
-    stock > 5
-      ? { text: "В наявності", color: "text-green-600" }
-      : stock > 0
-      ? { text: "Мало на складі", color: "text-yellow-500" }
-      : { text: "Немає в наявності", color: "text-red-600" };
+  const availability = inStock
+    ? { text: "В наявності", color: "text-green-600" }
+    : { text: "Немає в наявності", color: "text-red-600" };
 
   return (
     <div
@@ -160,9 +149,9 @@ export const ProductCard: React.FC<{
         <button
           onClick={handleAddToCart}
           className={`flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition-colors ${
-            stock === 0 ? "opacity-50 cursor-not-allowed" : ""
+            !inStock ? "opacity-50 cursor-not-allowed" : ""
           }`}
-          disabled={stock === 0}
+          disabled={!inStock}
         >
           До кошика
         </button>

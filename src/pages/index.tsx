@@ -52,6 +52,7 @@ export default function Home({
 }
 
 export const getServerSideProps: GetServerSideProps = async () => {
+  // Получаем популярные продукты
   const { data: rawProducts, error: productError } = await supabase
     .from("products")
     .select(
@@ -70,29 +71,37 @@ export const getServerSideProps: GetServerSideProps = async () => {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    price: p.price,
+    price: p.price ?? 0,
     brand: p.brand || "",
-    stock: p.stock ?? 0,
     description: p.description || "",
     short_description: p.short_description || "",
     image_url: p.image_url || "",
     hover_image_url: p.hover_image_url || "",
     category: p.categories?.name || "",
-    subcategory_id: p.subcategory_id ?? undefined,
+    subcategory_id: p.subcategory_id ?? null,
     views: p.views ?? 0,
     sales: p.sales ?? 0,
     rating: p.rating ?? 0,
-    weight: p.weight ?? undefined,
-    power: p.power_watts ?? undefined,
-    power_type: p.power_type ? "watts" : undefined,
+    weight: p.weight ?? null,
+    power: p.power_watts ?? null,
+    power_type: p.power_type ?? null,
     is_brushless: p.power_type === "Безщітковий",
-    chuck_diameter: p.chuck_diameter ?? undefined,
-    rpm: p.rpm ?? undefined,
-    speeds: p.speeds ?? undefined,
-    removable_chuck: p.removable_chuck ?? undefined,
+    chuck_diameter: p.chuck_diameter ?? null,
+    rpm: p.rpm ?? null,
+    speeds: p.speeds ?? null,
+    removable_chuck: p.removable_chuck ?? null,
     tool_types: p.tool_types
       ? { id: p.tool_types.id, name: p.tool_types.name }
       : undefined,
+    // If the DB provides a numeric `stock`, use it; otherwise keep undefined and
+    // fall back to the DB `status` value when rendering components.
+    stock: p.stock ?? null,
+    status:
+      typeof p.stock === "number"
+        ? p.stock > 0
+          ? "В наявності"
+          : "Не в наявності"
+        : p.status ?? "В наявності",
     features: {},
     specs: [],
   }));
@@ -103,10 +112,11 @@ export const getServerSideProps: GetServerSideProps = async () => {
     .select("*");
   if (categoryError)
     console.error("❌ Error fetching categories:", categoryError.message);
+
   const formattedCategories: Category[] = (categories || []).map((cat) => ({
     id: cat.id,
     name: cat.name,
-    image_url: cat.image_url,
+    image_url: cat.image_url ?? null,
     slug: cat.slug || "",
   }));
 
@@ -117,6 +127,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
     .gte("rating", 4);
   if (reviewError)
     console.error("❌ Error fetching reviews:", reviewError.message);
+
   const allReviews: Review[] = (rawReviews || []).map((r: any) => ({
     id: r.id,
     userName: r.user_name,
@@ -128,22 +139,9 @@ export const getServerSideProps: GetServerSideProps = async () => {
   const shuffled = allReviews.sort(() => 0.5 - Math.random());
   const featuredReviews = shuffled.slice(0, 3);
 
-  // Заменяем undefined на null для сериализации Next.js
-  const serializableProducts = popularProducts.map((p) => ({
-    ...p,
-    power: p.power ?? null,
-    weight: p.weight ?? null,
-    chuck_diameter: p.chuck_diameter ?? null,
-    rpm: p.rpm ?? null,
-    speeds: p.speeds ?? null,
-    removable_chuck: p.removable_chuck ?? null,
-    tool_types: p.tool_types ?? null,
-    subcategory_id: p.subcategory_id ?? null,
-  }));
-
   return {
     props: {
-      popularProducts: serializableProducts,
+      popularProducts,
       categories: formattedCategories,
       featuredReviews,
     },
