@@ -685,24 +685,24 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          order: number
           product_id: string
+          show_order: number
           updated_at: string | null
           url: string
         }
         Insert: {
           created_at?: string
           id?: string
-          order?: number
           product_id: string
+          show_order?: number
           updated_at?: string | null
           url: string
         }
         Update: {
           created_at?: string
           id?: string
-          order?: number
           product_id?: string
+          show_order?: number
           updated_at?: string | null
           url?: string
         }
