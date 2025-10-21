@@ -42,7 +42,7 @@ export type Database = {
           id: string
           name: string
           slug: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           attribute_filter_ui_type_id?: string | null
@@ -51,7 +51,7 @@ export type Database = {
           id?: string
           name: string
           slug: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           attribute_filter_ui_type_id?: string | null
@@ -60,7 +60,7 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -84,19 +84,19 @@ export type Database = {
           created_at: string
           id: string
           type: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           type: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           type?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -105,19 +105,19 @@ export type Database = {
           created_at: string
           id: string
           type: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           type: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           type?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -128,7 +128,7 @@ export type Database = {
           image_url: string | null
           name: string
           slug: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
@@ -136,7 +136,7 @@ export type Database = {
           image_url?: string | null
           name: string
           slug: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
@@ -144,7 +144,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           slug?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -157,7 +157,7 @@ export type Database = {
           name: string
           parent_id: string | null
           slug: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
@@ -167,7 +167,7 @@ export type Database = {
           name: string
           parent_id?: string | null
           slug: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
@@ -177,7 +177,7 @@ export type Database = {
           name?: string
           parent_id?: string | null
           slug?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -191,7 +191,7 @@ export type Database = {
           last_name: string
           middle_name: string | null
           password: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
@@ -202,7 +202,7 @@ export type Database = {
           last_name: string
           middle_name?: string | null
           password: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
@@ -213,7 +213,7 @@ export type Database = {
           last_name?: string
           middle_name?: string | null
           password?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -227,7 +227,7 @@ export type Database = {
           phone: string
           postal_code: string
           region: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           address: string
@@ -238,7 +238,7 @@ export type Database = {
           phone: string
           postal_code: string
           region: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           address?: string
@@ -249,7 +249,7 @@ export type Database = {
           phone?: string
           postal_code?: string
           region?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -267,21 +267,21 @@ export type Database = {
           category_id: string
           created_at: string
           id: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           attribute_id: string
           category_id: string
           created_at?: string
           id?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           attribute_id?: string
           category_id?: string
           created_at?: string
           id?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -306,7 +306,7 @@ export type Database = {
           created_at: string
           id: string
           product_id: string
-          updated_at: string
+          updated_at: string | null
           value: string
         }
         Insert: {
@@ -314,7 +314,7 @@ export type Database = {
           created_at?: string
           id?: string
           product_id: string
-          updated_at?: string
+          updated_at?: string | null
           value: string
         }
         Update: {
@@ -322,7 +322,7 @@ export type Database = {
           created_at?: string
           id?: string
           product_id?: string
-          updated_at?: string
+          updated_at?: string | null
           value?: string
         }
         Relationships: [
@@ -348,21 +348,21 @@ export type Database = {
           id: string
           product_badge_id: string | null
           product_id: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           product_badge_id?: string | null
           product_id?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           product_badge_id?: string | null
           product_id?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -391,7 +391,7 @@ export type Database = {
           isDeleted: boolean
           order_status_id: string
           total: number
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           comment?: string | null
@@ -402,7 +402,7 @@ export type Database = {
           isDeleted?: boolean
           order_status_id: string
           total: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           comment?: string | null
@@ -413,7 +413,7 @@ export type Database = {
           isDeleted?: boolean
           order_status_id?: string
           total?: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -448,7 +448,7 @@ export type Database = {
           price: number
           product_id: string
           quantity: number
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
@@ -458,7 +458,7 @@ export type Database = {
           price: number
           product_id: string
           quantity: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
@@ -468,7 +468,7 @@ export type Database = {
           price?: number
           product_id?: string
           quantity?: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -492,19 +492,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -518,7 +518,7 @@ export type Database = {
           order_id: string
           payment_status_id: string
           provider: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           amount: number
@@ -529,7 +529,7 @@ export type Database = {
           order_id: string
           payment_status_id: string
           provider: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           amount?: number
@@ -540,7 +540,7 @@ export type Database = {
           order_id?: string
           payment_status_id?: string
           provider?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -571,19 +571,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -600,7 +600,7 @@ export type Database = {
           price: number
           product_status_id: string
           slug: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           brand_id: string
@@ -614,7 +614,7 @@ export type Database = {
           price: number
           product_status_id: string
           slug: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           brand_id?: string
@@ -628,7 +628,7 @@ export type Database = {
           price?: number
           product_status_id?: string
           slug?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -661,7 +661,7 @@ export type Database = {
           id: string
           name: string
           slug: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           color?: string
@@ -669,7 +669,7 @@ export type Database = {
           id?: string
           name: string
           slug: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           color?: string
@@ -677,7 +677,7 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -687,7 +687,7 @@ export type Database = {
           id: string
           order: number
           product_id: string
-          updated_at: string
+          updated_at: string | null
           url: string
         }
         Insert: {
@@ -695,7 +695,7 @@ export type Database = {
           id?: string
           order?: number
           product_id: string
-          updated_at?: string
+          updated_at?: string | null
           url: string
         }
         Update: {
@@ -703,7 +703,7 @@ export type Database = {
           id?: string
           order?: number
           product_id?: string
-          updated_at?: string
+          updated_at?: string | null
           url?: string
         }
         Relationships: [
@@ -722,21 +722,21 @@ export type Database = {
           id: string
           name: string
           slug: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           slug: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           slug?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -748,7 +748,7 @@ export type Database = {
           id: string
           product_id: string
           rating: number
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           comment?: string | null
@@ -757,7 +757,7 @@ export type Database = {
           id?: string
           product_id: string
           rating: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           comment?: string | null
@@ -766,7 +766,7 @@ export type Database = {
           id?: string
           product_id?: string
           rating?: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
