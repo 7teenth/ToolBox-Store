@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "db:reset": "supabase db reset",
+    "db:typegen": "supabase gen types typescript --local > supabase/types/database.types.ts",
+    "db:localdump": "supabase db dump --local -f supabase/schema.sql"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
