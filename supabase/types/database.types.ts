@@ -190,7 +190,6 @@ export type Database = {
           isDeleted: boolean
           last_name: string
           middle_name: string | null
-          password: string
           updated_at: string | null
         }
         Insert: {
@@ -201,7 +200,6 @@ export type Database = {
           isDeleted?: boolean
           last_name: string
           middle_name?: string | null
-          password: string
           updated_at?: string | null
         }
         Update: {
@@ -212,54 +210,9 @@ export type Database = {
           isDeleted?: boolean
           last_name?: string
           middle_name?: string | null
-          password?: string
           updated_at?: string | null
         }
         Relationships: []
-      }
-      customer_address: {
-        Row: {
-          address: string
-          city: string
-          created_at: string
-          customer_id: string
-          id: string
-          phone: string
-          postal_code: string
-          region: string
-          updated_at: string | null
-        }
-        Insert: {
-          address: string
-          city: string
-          created_at?: string
-          customer_id: string
-          id?: string
-          phone: string
-          postal_code: string
-          region: string
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string
-          city?: string
-          created_at?: string
-          customer_id?: string
-          id?: string
-          phone?: string
-          postal_code?: string
-          region?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_address_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       link_attribute_category: {
         Row: {
@@ -385,10 +338,10 @@ export type Database = {
         Row: {
           comment: string | null
           created_at: string
-          customer_address_id: string
           customer_id: string
           id: string
           isDeleted: boolean
+          order_shipping_address_id: string
           order_status_id: string
           total: number
           updated_at: string | null
@@ -396,10 +349,10 @@ export type Database = {
         Insert: {
           comment?: string | null
           created_at?: string
-          customer_address_id: string
           customer_id: string
           id?: string
           isDeleted?: boolean
+          order_shipping_address_id: string
           order_status_id: string
           total: number
           updated_at?: string | null
@@ -407,27 +360,27 @@ export type Database = {
         Update: {
           comment?: string | null
           created_at?: string
-          customer_address_id?: string
           customer_id?: string
           id?: string
           isDeleted?: boolean
+          order_shipping_address_id?: string
           order_status_id?: string
           total?: number
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "order_customer_address_id_fkey"
-            columns: ["customer_address_id"]
-            isOneToOne: false
-            referencedRelation: "customer_address"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "order_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_order_shipping_address_id_fkey"
+            columns: ["order_shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "order_shipping_address"
             referencedColumns: ["id"]
           },
           {
@@ -483,6 +436,50 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_shipping_address: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          customer_id: string
+          id: string
+          phone: string
+          postal_code: string
+          region: string
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          phone: string
+          postal_code: string
+          region: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          phone?: string
+          postal_code?: string
+          region?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_address_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer"
             referencedColumns: ["id"]
           },
         ]

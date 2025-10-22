@@ -145,13 +145,13 @@ FROM (VALUES
 ) AS links(attr_slug, cat_slug);
 
 -- Insert sample customers
-INSERT INTO public.customer (id, email, password, first_name, last_name, middle_name, created_at) VALUES
-(uuid_generate_v4(), 'john.doe@example.com', '$2a$10$xyz123', 'John', 'Doe', NULL, NOW()),
-(uuid_generate_v4(), 'jane.smith@example.com', '$2a$10$abc456', 'Jane', 'Smith', 'Marie', NOW()),
-(uuid_generate_v4(), 'mike.johnson@example.com', '$2a$10$def789', 'Mike', 'Johnson', NULL, NOW());
+INSERT INTO public.customer (id, email, first_name, last_name, middle_name, created_at) VALUES
+(uuid_generate_v4(), 'john.doe@example.com', 'John', 'Doe', NULL, NOW()),
+(uuid_generate_v4(), 'jane.smith@example.com', 'Jane', 'Smith', 'Marie', NOW()),
+(uuid_generate_v4(), 'mike.johnson@example.com', 'Mike', 'Johnson', NULL, NOW());
 
--- Insert customer addresses
-INSERT INTO public.customer_address (id, region, city, address, postal_code, phone, customer_id, created_at)
+-- Insert order shipping addresses
+INSERT INTO public.order_shipping_address (id, region, city, address, postal_code, phone, customer_id, created_at)
 SELECT
   uuid_generate_v4(),
   addr.region,
@@ -260,14 +260,14 @@ FROM (VALUES
 ) AS review(rating, comment, product_slug, customer_email);
 
 -- Insert sample orders
-INSERT INTO public.order (id, comment, total, customer_id, customer_address_id, order_status_id, created_at)
+INSERT INTO public.order (id, comment, total, customer_id, order_shipping_address_id, order_status_id, created_at)
 SELECT
   uuid_generate_v4(),
   ord.comment,
   ord.total,
   (SELECT id FROM public.customer WHERE email = ord.customer_email),
-  (SELECT id FROM public.customer_address WHERE id IN (
-    SELECT id FROM public.customer_address WHERE customer_id = (SELECT id FROM public.customer WHERE email = ord.customer_email) LIMIT 1
+  (SELECT id FROM public.order_shipping_address WHERE id IN (
+    SELECT id FROM public.order_shipping_address WHERE customer_id = (SELECT id FROM public.customer WHERE email = ord.customer_email) LIMIT 1
   )),
   (SELECT id FROM public.order_status WHERE name = ord.status),
   NOW()
