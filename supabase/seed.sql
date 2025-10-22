@@ -3,73 +3,73 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Insert initial data for attribute_filter_ui_type
 INSERT INTO public.attribute_filter_ui_type (id, type, created_at) VALUES
-(uuid_generate_v4(), 'checkbox', NOW()),
-(uuid_generate_v4(), 'radio', NOW()),
-(uuid_generate_v4(), 'range', NOW()),
-(uuid_generate_v4(), 'select', NOW()),
-(uuid_generate_v4(), 'color', NOW());
+(gen_random_uuid(), 'checkbox', NOW()),
+(gen_random_uuid(), 'radio', NOW()),
+(gen_random_uuid(), 'range', NOW()),
+(gen_random_uuid(), 'select', NOW()),
+(gen_random_uuid(), 'color', NOW());
 
 -- Insert initial data for attribute_type
 INSERT INTO public.attribute_type (id, type, created_at) VALUES
-(uuid_generate_v4(), 'text', NOW()),
-(uuid_generate_v4(), 'number', NOW()),
-(uuid_generate_v4(), 'boolean', NOW()),
-(uuid_generate_v4(), 'color', NOW()),
-(uuid_generate_v4(), 'size', NOW());
+(gen_random_uuid(), 'text', NOW()),
+(gen_random_uuid(), 'number', NOW()),
+(gen_random_uuid(), 'boolean', NOW()),
+(gen_random_uuid(), 'color', NOW()),
+(gen_random_uuid(), 'size', NOW());
 
 -- Insert initial data for product_status
 INSERT INTO public.product_status (id, name, slug, created_at) VALUES
-(uuid_generate_v4(), 'Active', 'active', NOW()),
-(uuid_generate_v4(), 'Draft', 'draft', NOW()),
-(uuid_generate_v4(), 'Archived', 'archived', NOW()),
-(uuid_generate_v4(), 'Out of Stock', 'out-of-stock', NOW());
+(gen_random_uuid(), 'Active', 'active', NOW()),
+(gen_random_uuid(), 'Draft', 'draft', NOW()),
+(gen_random_uuid(), 'Archived', 'archived', NOW()),
+(gen_random_uuid(), 'Out of Stock', 'out-of-stock', NOW());
 
 -- Insert initial data for order_status
 INSERT INTO public.order_status (id, name, created_at) VALUES
-(uuid_generate_v4(), 'Pending', NOW()),
-(uuid_generate_v4(), 'Confirmed', NOW()),
-(uuid_generate_v4(), 'Processing', NOW()),
-(uuid_generate_v4(), 'Shipped', NOW()),
-(uuid_generate_v4(), 'Delivered', NOW()),
-(uuid_generate_v4(), 'Cancelled', NOW());
+(gen_random_uuid(), 'Pending', NOW()),
+(gen_random_uuid(), 'Confirmed', NOW()),
+(gen_random_uuid(), 'Processing', NOW()),
+(gen_random_uuid(), 'Shipped', NOW()),
+(gen_random_uuid(), 'Delivered', NOW()),
+(gen_random_uuid(), 'Cancelled', NOW());
 
 -- Insert initial data for payment_status
 INSERT INTO public.payment_status (id, name, created_at) VALUES
-(uuid_generate_v4(), 'Pending', NOW()),
-(uuid_generate_v4(), 'Completed', NOW()),
-(uuid_generate_v4(), 'Failed', NOW()),
-(uuid_generate_v4(), 'Refunded', NOW()),
-(uuid_generate_v4(), 'Cancelled', NOW());
+(gen_random_uuid(), 'Pending', NOW()),
+(gen_random_uuid(), 'Completed', NOW()),
+(gen_random_uuid(), 'Failed', NOW()),
+(gen_random_uuid(), 'Refunded', NOW()),
+(gen_random_uuid(), 'Cancelled', NOW());
 
 -- Insert initial data for product_badge
 INSERT INTO public.product_badge (id, slug, name, color, created_at) VALUES
-(uuid_generate_v4(), 'new', 'New', '#22c55e', NOW()),
-(uuid_generate_v4(), 'sale', 'Sale', '#ef4444', NOW()),
-(uuid_generate_v4(), 'bestseller', 'Bestseller', '#f59e0b', NOW()),
-(uuid_generate_v4(), 'limited', 'Limited Edition', '#8b5cf6', NOW()),
-(uuid_generate_v4(), 'featured', 'Featured', '#3b82f6', NOW());
+(gen_random_uuid(), 'new', 'New', '#22c55e', NOW()),
+(gen_random_uuid(), 'sale', 'Sale', '#ef4444', NOW()),
+(gen_random_uuid(), 'bestseller', 'Bestseller', '#f59e0b', NOW()),
+(gen_random_uuid(), 'limited', 'Limited Edition', '#8b5cf6', NOW()),
+(gen_random_uuid(), 'featured', 'Featured', '#3b82f6', NOW());
 
 -- Insert initial data for brand
 INSERT INTO public.brand (id, slug, name, image_url, created_at) VALUES
-(uuid_generate_v4(), 'nike', 'Nike', 'https://example.com/images/brands/nike.png', NOW()),
-(uuid_generate_v4(), 'adidas', 'Adidas', 'https://example.com/images/brands/adidas.png', NOW()),
-(uuid_generate_v4(), 'apple', 'Apple', 'https://example.com/images/brands/apple.png', NOW()),
-(uuid_generate_v4(), 'samsung', 'Samsung', 'https://example.com/images/brands/samsung.png', NOW()),
-(uuid_generate_v4(), 'sony', 'Sony', 'https://example.com/images/brands/sony.png', NOW());
+(gen_random_uuid(), 'nike', 'Nike', 'https://example.com/images/brands/nike.png', NOW()),
+(gen_random_uuid(), 'adidas', 'Adidas', 'https://example.com/images/brands/adidas.png', NOW()),
+(gen_random_uuid(), 'apple', 'Apple', 'https://example.com/images/brands/apple.png', NOW()),
+(gen_random_uuid(), 'samsung', 'Samsung', 'https://example.com/images/brands/samsung.png', NOW()),
+(gen_random_uuid(), 'sony', 'Sony', 'https://example.com/images/brands/sony.png', NOW());
 
 -- Insert initial data for category (with hierarchy)
 WITH root_categories AS (
   INSERT INTO public.category (id, parent_id, slug, name, image_url, description, created_at)
   VALUES
-  (uuid_generate_v4(), NULL, 'electronics', 'Electronics', 'https://example.com/images/categories/electronics.png', 'Latest electronic gadgets and devices', NOW()),
-  (uuid_generate_v4(), NULL, 'clothing', 'Clothing', 'https://example.com/images/categories/clothing.png', 'Fashionable clothing for everyone', NOW()),
-  (uuid_generate_v4(), NULL, 'sports', 'Sports', 'https://example.com/images/categories/sports.png', 'Sports equipment and accessories', NOW())
+  (gen_random_uuid(), NULL, 'electronics', 'Electronics', 'https://example.com/images/categories/electronics.png', 'Latest electronic gadgets and devices', NOW()),
+  (gen_random_uuid(), NULL, 'clothing', 'Clothing', 'https://example.com/images/categories/clothing.png', 'Fashionable clothing for everyone', NOW()),
+  (gen_random_uuid(), NULL, 'sports', 'Sports', 'https://example.com/images/categories/sports.png', 'Sports equipment and accessories', NOW())
   RETURNING id, slug
 ),
 electronics_sub AS (
   INSERT INTO public.category (id, parent_id, slug, name, image_url, description, created_at)
   SELECT
-    uuid_generate_v4(),
+    gen_random_uuid(),
     (SELECT id FROM root_categories WHERE slug = 'electronics'),
     unnest(ARRAY['smartphones', 'laptops', 'headphones']),
     unnest(ARRAY['Smartphones', 'Laptops', 'Headphones']),
@@ -89,7 +89,7 @@ electronics_sub AS (
 clothing_sub AS (
   INSERT INTO public.category (id, parent_id, slug, name, image_url, description, created_at)
   SELECT
-    uuid_generate_v4(),
+    gen_random_uuid(),
     (SELECT id FROM root_categories WHERE slug = 'clothing'),
     unnest(ARRAY['mens', 'womens', 'kids']),
     unnest(ARRAY['Men''s Clothing', 'Women''s Clothing', 'Kids Clothing']),
@@ -111,7 +111,7 @@ SELECT 1;
 -- Insert initial data for attributes
 INSERT INTO public.attribute (id, slug, name, attribute_type_id, attribute_filter_ui_type_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   attr.slug,
   attr.name,
   (SELECT id FROM public.attribute_type WHERE type = attr.attribute_type),
@@ -130,7 +130,7 @@ FROM (VALUES
 -- Link attributes to categories
 INSERT INTO public.link_attribute_category (id, attribute_id, category_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   (SELECT id FROM public.attribute WHERE slug = attr_slug),
   (SELECT id FROM public.category WHERE slug = cat_slug),
   NOW()
@@ -146,14 +146,14 @@ FROM (VALUES
 
 -- Insert sample customers
 INSERT INTO public.customer (id, email, first_name, last_name, middle_name, created_at) VALUES
-(uuid_generate_v4(), 'john.doe@example.com', 'John', 'Doe', NULL, NOW()),
-(uuid_generate_v4(), 'jane.smith@example.com', 'Jane', 'Smith', 'Marie', NOW()),
-(uuid_generate_v4(), 'mike.johnson@example.com', 'Mike', 'Johnson', NULL, NOW());
+(gen_random_uuid(), 'john.doe@example.com', 'John', 'Doe', NULL, NOW()),
+(gen_random_uuid(), 'jane.smith@example.com', 'Jane', 'Smith', 'Marie', NOW()),
+(gen_random_uuid(), 'mike.johnson@example.com', 'Mike', 'Johnson', NULL, NOW());
 
 -- Insert order shipping addresses
 INSERT INTO public.order_shipping_address (id, region, city, address, postal_code, phone, customer_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   addr.region,
   addr.city,
   addr.address,
@@ -170,7 +170,7 @@ FROM (VALUES
 -- Insert sample products
 INSERT INTO public.product (id, slug, name, description, price, discont, product_status_id, category_id, brand_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   prod.slug,
   prod.name,
   prod.description,
@@ -192,7 +192,7 @@ FROM (VALUES
 -- Insert product images
 INSERT INTO public.product_image (id, url, show_order, product_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   img.url,
   img.show_order,
   (SELECT id FROM public.product WHERE slug = img.product_slug),
@@ -209,7 +209,7 @@ FROM (VALUES
 -- Link product badges to products
 INSERT INTO public.link_product_badge_product (id, product_id, product_badge_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   (SELECT id FROM public.product WHERE slug = prod_slug),
   (SELECT id FROM public.product_badge WHERE slug = badge_slug),
   NOW()
@@ -225,7 +225,7 @@ FROM (VALUES
 -- Link attributes to products
 INSERT INTO public.link_attribute_product (id, product_id, attribute_id, value, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   (SELECT id FROM public.product WHERE slug = prod_slug),
   (SELECT id FROM public.attribute WHERE slug = attr_slug),
   attr_value,
@@ -245,7 +245,7 @@ FROM (VALUES
 -- Insert sample reviews
 INSERT INTO public.review (id, rating, comment, product_id, customer_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   review.rating,
   review.comment,
   (SELECT id FROM public.product WHERE slug = review.product_slug),
@@ -262,7 +262,7 @@ FROM (VALUES
 -- Insert sample orders
 INSERT INTO public.order (id, comment, total, customer_id, order_shipping_address_id, order_status_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   ord.comment,
   ord.total,
   (SELECT id FROM public.customer WHERE email = ord.customer_email),
@@ -280,7 +280,7 @@ FROM (VALUES
 -- Insert order items
 INSERT INTO public.order_item (id, quantity, price, discount, order_id, product_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   item.quantity,
   item.price,
   item.discount,
@@ -300,7 +300,7 @@ FROM (VALUES
 -- Insert sample payments
 INSERT INTO public.payment (id, amount, provider, customer_id, order_id, payment_status_id, created_at)
 SELECT
-  uuid_generate_v4(),
+  gen_random_uuid(),
   pay.amount,
   pay.provider,
   (SELECT customer_id FROM public.order WHERE id = pay.order_id),

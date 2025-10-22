@@ -127,6 +127,4 @@ grant truncate on table "public"."order_shipping_address" to "service_role";
 
 grant update on table "public"."order_shipping_address" to "service_role";
 
-CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.order_shipping_address FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
-
-
+CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.order_shipping_address FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime('updated_at');
