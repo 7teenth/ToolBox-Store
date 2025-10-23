@@ -187,7 +187,7 @@ export type Database = {
           email: string
           first_name: string
           id: string
-          isDeleted: boolean
+          is_deleted: boolean
           last_name: string
           middle_name: string | null
           updated_at: string | null
@@ -197,7 +197,7 @@ export type Database = {
           email: string
           first_name: string
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           last_name: string
           middle_name?: string | null
           updated_at?: string | null
@@ -207,7 +207,7 @@ export type Database = {
           email?: string
           first_name?: string
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           last_name?: string
           middle_name?: string | null
           updated_at?: string | null
@@ -340,7 +340,7 @@ export type Database = {
           created_at: string
           customer_id: string
           id: string
-          isDeleted: boolean
+          is_deleted: boolean
           order_shipping_address_id: string
           order_status_id: string
           total: number
@@ -351,7 +351,7 @@ export type Database = {
           created_at?: string
           customer_id: string
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           order_shipping_address_id: string
           order_status_id: string
           total: number
@@ -362,7 +362,7 @@ export type Database = {
           created_at?: string
           customer_id?: string
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           order_shipping_address_id?: string
           order_status_id?: string
           total?: number
@@ -511,7 +511,7 @@ export type Database = {
           created_at: string
           customer_id: string
           id: string
-          isDeleted: boolean
+          is_deleted: boolean
           order_id: string
           payment_status_id: string
           provider: string
@@ -522,7 +522,7 @@ export type Database = {
           created_at?: string
           customer_id: string
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           order_id: string
           payment_status_id: string
           provider: string
@@ -533,7 +533,7 @@ export type Database = {
           created_at?: string
           customer_id?: string
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           order_id?: string
           payment_status_id?: string
           provider?: string
@@ -590,9 +590,9 @@ export type Database = {
           category_id: string
           created_at: string
           description: string | null
-          discont: number | null
+          discount: number | null
           id: string
-          isDeleted: boolean
+          is_deleted: boolean
           name: string
           price: number
           product_status_id: string
@@ -604,9 +604,9 @@ export type Database = {
           category_id: string
           created_at?: string
           description?: string | null
-          discont?: number | null
+          discount?: number | null
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           name: string
           price: number
           product_status_id: string
@@ -618,9 +618,9 @@ export type Database = {
           category_id?: string
           created_at?: string
           description?: string | null
-          discont?: number | null
+          discount?: number | null
           id?: string
-          isDeleted?: boolean
+          is_deleted?: boolean
           name?: string
           price?: number
           product_status_id?: string

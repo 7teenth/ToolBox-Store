@@ -168,14 +168,14 @@ FROM (VALUES
 ) AS addr(region, city, address, postal_code, phone, customer_email);
 
 -- Insert sample products
-INSERT INTO public.product (id, slug, name, description, price, discont, product_status_id, category_id, brand_id, created_at)
+INSERT INTO public.product (id, slug, name, description, price, discount, product_status_id, category_id, brand_id, created_at)
 SELECT
   gen_random_uuid(),
   prod.slug,
   prod.name,
   prod.description,
   prod.price,
-  prod.discont,
+  prod.discount,
   (SELECT id FROM public.product_status WHERE slug = 'active'),
   (SELECT id FROM public.category WHERE slug = prod.category_slug),
   (SELECT id FROM public.brand WHERE slug = prod.brand_slug),
@@ -187,7 +187,7 @@ FROM (VALUES
   ('airpods-pro', 'AirPods Pro', 'Wireless noise cancelling earbuds', 249.99, 15, 'headphones', 'apple'),
   ('nike-air-force', 'Nike Air Force 1', 'Classic white sneakers', 120.00, 20, 'mens', 'nike'),
   ('adidas-ultraboost', 'Adidas Ultraboost', 'Comfortable running shoes', 180.00, NULL, 'sports', 'adidas')
-) AS prod(slug, name, description, price, discont, category_slug, brand_slug);
+) AS prod(slug, name, description, price, discount, category_slug, brand_slug);
 
 -- Insert product images
 INSERT INTO public.product_image (id, url, show_order, product_id, created_at)
