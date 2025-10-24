@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type AttributeFilterUiType = Database["public"]["Tables"]["attribute_filter_ui_type"]["Row"];
 export type AttributeFilterUiTypeCreate  = Database["public"]["Tables"]["attribute_filter_ui_type"]["Insert"];
@@ -8,6 +10,8 @@ export type AttributeFilterUiTypeUpdate = Database["public"]["Tables"]["attribut
 export async function createAttributeFilterUiType(
   record: AttributeFilterUiTypeCreate
 ): Promise<AttributeFilterUiType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_filter_ui_type")
     .insert([record])
@@ -21,10 +25,11 @@ export async function createAttributeFilterUiType(
   return data;
 }
 
-
 export async function getAttributeFilterUiTypeById(
   id: string
 ): Promise<AttributeFilterUiType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_filter_ui_type")
     .select("*")
@@ -38,11 +43,12 @@ export async function getAttributeFilterUiTypeById(
   return data;
 }
 
-
 export async function updateAttributeFilterUiType(
   id: string,
   updates: AttributeFilterUiTypeUpdate
 ): Promise<AttributeFilterUiType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_filter_ui_type")
     .update(updates)
@@ -57,10 +63,11 @@ export async function updateAttributeFilterUiType(
   return data;
 }
 
-
 export async function deleteAttributeFilterUiType(
   id: string
 ): Promise<AttributeFilterUiType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_filter_ui_type")
     .delete()

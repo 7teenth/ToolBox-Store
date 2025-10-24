@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type ProductBadge = Database["public"]["Tables"]["product_badge"]["Row"];
 export type ProductBadgeCreate  = Database["public"]["Tables"]["product_badge"]["Insert"];
@@ -8,6 +10,8 @@ export type ProductBadgeUpdate = Database["public"]["Tables"]["product_badge"]["
 export async function createProductBadge(
   badge: ProductBadgeCreate
 ): Promise<ProductBadge> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product_badge")
     .insert([badge])
@@ -24,6 +28,8 @@ export async function createProductBadge(
 export async function getProductBadgeById(
   id: string
 ): Promise<ProductBadge> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product_badge")
     .select("*")
@@ -41,6 +47,8 @@ export async function updateProductBadge(
   id: string,
   updates: ProductBadgeUpdate
 ): Promise<ProductBadge> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product_badge")
     .update(updates)
@@ -58,6 +66,8 @@ export async function updateProductBadge(
 export async function deleteProductBadge(
   id: string
 ): Promise<ProductBadge> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product_badge")
     .delete()

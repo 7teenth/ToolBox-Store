@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type PaymentStatus = Database["public"]["Tables"]["payment_status"]["Row"];
 export type PaymentStatusCreate  = Database["public"]["Tables"]["payment_status"]["Insert"];
@@ -8,6 +10,8 @@ export type PaymentStatusUpdate = Database["public"]["Tables"]["payment_status"]
 export async function createPaymentStatus(
   status: PaymentStatusCreate
 ): Promise<PaymentStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("payment_status")
     .insert([status])
@@ -21,10 +25,11 @@ export async function createPaymentStatus(
   return data;
 }
 
-
 export async function getPaymentStatusById(
   id: string
 ): Promise<PaymentStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("payment_status")
     .select("*")
@@ -38,11 +43,12 @@ export async function getPaymentStatusById(
   return data;
 }
 
-
 export async function updatePaymentStatus(
   id: string,
   updates: PaymentStatusUpdate
 ): Promise<PaymentStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("payment_status")
     .update(updates)
@@ -57,10 +63,11 @@ export async function updatePaymentStatus(
   return data;
 }
 
-
 export async function deletePaymentStatus(
   id: string
 ): Promise<PaymentStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("payment_status")
     .delete()

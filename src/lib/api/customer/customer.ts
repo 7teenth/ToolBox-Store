@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type Customer = Database["public"]["Tables"]["customer"]["Row"];
 export type CustomerCreate = Database["public"]["Tables"]["customer"]["Insert"];
@@ -8,6 +10,8 @@ export type CustomerUpdate = Database["public"]["Tables"]["customer"]["Update"];
 export async function createCustomer(
   customer: CustomerCreate
 ): Promise<Customer> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("customer")
     .insert([customer])
@@ -24,6 +28,8 @@ export async function createCustomer(
 export async function getCustomerById(
   id: string
 ): Promise<Customer> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("customer")
     .select("*")
@@ -41,6 +47,8 @@ export async function updateCustomer(
   id: string,
   updates: CustomerUpdate
 ): Promise<Customer> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("customer")
     .update(updates)
@@ -58,6 +66,8 @@ export async function updateCustomer(
 export async function deleteCustomer(
   id: string
 ): Promise<Customer> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("customer")
     .delete()

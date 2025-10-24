@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type OrderShippingAddress = Database["public"]["Tables"]["order_shipping_address"]["Row"];
 export type OrderShippingAddressCreate  = Database["public"]["Tables"]["order_shipping_address"]["Insert"];
@@ -8,6 +10,8 @@ export type OrderShippingAddressUpdate = Database["public"]["Tables"]["order_shi
 export async function createOrderShippingAddress(
   address: OrderShippingAddressCreate
 ): Promise<OrderShippingAddress> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_shipping_address")
     .insert([address])
@@ -24,6 +28,8 @@ export async function createOrderShippingAddress(
 export async function getOrderShippingAddressById(
   id: string
 ): Promise<OrderShippingAddress> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_shipping_address")
     .select("*")
@@ -41,6 +47,8 @@ export async function updateOrderShippingAddress(
   id: string,
   updates: OrderShippingAddressUpdate
 ): Promise<OrderShippingAddress> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_shipping_address")
     .update(updates)
@@ -58,6 +66,8 @@ export async function updateOrderShippingAddress(
 export async function deleteOrderShippingAddress(
   id: string
 ): Promise<OrderShippingAddress> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_shipping_address")
     .delete()

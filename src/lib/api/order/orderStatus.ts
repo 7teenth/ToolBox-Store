@@ -1,11 +1,15 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type OrderStatus = Database["public"]["Tables"]["order_status"]["Row"];
 export type OrderStatusCreate  = Database["public"]["Tables"]["order_status"]["Insert"];
 export type OrderStatusUpdate = Database["public"]["Tables"]["order_status"]["Update"];
 
 export async function createOrderStatus(record: OrderStatusCreate): Promise<OrderStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_status")
     .insert([record])
@@ -20,6 +24,8 @@ export async function createOrderStatus(record: OrderStatusCreate): Promise<Orde
 }
 
 export async function getOrderStatusById(id: string): Promise<OrderStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_status")
     .select("*")
@@ -34,6 +40,8 @@ export async function getOrderStatusById(id: string): Promise<OrderStatus> {
 }
 
 export async function updateOrderStatus(id: string, updates: OrderStatusUpdate): Promise<OrderStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_status")
     .update(updates)
@@ -49,6 +57,8 @@ export async function updateOrderStatus(id: string, updates: OrderStatusUpdate):
 }
 
 export async function deleteOrderStatus(id: string): Promise<OrderStatus> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order_status")
     .delete()

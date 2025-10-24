@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type Category = Database["public"]["Tables"]["category"]["Row"];
 export type CategoryCreate  = Database["public"]["Tables"]["category"]["Insert"];
@@ -8,6 +10,8 @@ export type CategoryUpdate = Database["public"]["Tables"]["category"]["Update"];
 export async function createCategory(
   category: CategoryCreate
 ): Promise<Category> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("category")
     .insert([category])
@@ -22,6 +26,8 @@ export async function createCategory(
 }
 
 export async function getCategoryById(id: string): Promise<Category> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("category")
     .select("*")
@@ -39,6 +45,8 @@ export async function updateCategory(
   id: string,
   updates: CategoryUpdate
 ): Promise<Category> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("category")
     .update(updates)
@@ -54,6 +62,8 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<Category> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("category")
     .delete()

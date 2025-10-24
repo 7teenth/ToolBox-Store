@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type AttributeType = Database["public"]["Tables"]["attribute_type"]["Row"];
 export type AttributeTypeCreate  = Database["public"]["Tables"]["attribute_type"]["Insert"];
@@ -8,6 +10,8 @@ export type AttributeTypeUpdate = Database["public"]["Tables"]["attribute_type"]
 export async function createAttributeType(
   record: AttributeTypeCreate
 ): Promise<AttributeType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_type")
     .insert([record])
@@ -21,10 +25,11 @@ export async function createAttributeType(
   return data;
 }
 
-
 export async function getAttributeTypeById(
   id: string
 ): Promise<AttributeType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_type")
     .select("*")
@@ -38,11 +43,12 @@ export async function getAttributeTypeById(
   return data;
 }
 
-
 export async function updateAttributeType(
   id: string,
   updates: AttributeTypeUpdate
 ): Promise<AttributeType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_type")
     .update(updates)
@@ -57,10 +63,11 @@ export async function updateAttributeType(
   return data;
 }
 
-
 export async function deleteAttributeType(
   id: string
 ): Promise<AttributeType> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("attribute_type")
     .delete()
