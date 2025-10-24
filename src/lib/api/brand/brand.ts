@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type Brand = Database["public"]["Tables"]["brand"]["Row"];
 export type BrandCreate = Database["public"]["Tables"]["brand"]["Insert"];
@@ -8,6 +10,8 @@ export type BrandUpdate = Database["public"]["Tables"]["brand"]["Update"];
 export async function createBrand(
   brand: BrandCreate
 ): Promise<Brand> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("brand")
     .insert([brand])
@@ -24,6 +28,8 @@ export async function createBrand(
 export async function getBrandById(
   id: string
 ): Promise<Brand> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("brand")
     .select("*")
@@ -41,6 +47,8 @@ export async function updateBrand(
   id: string,
   updates: BrandUpdate
 ): Promise<Brand> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("brand")
     .update(updates)
@@ -58,6 +66,8 @@ export async function updateBrand(
 export async function deleteBrand(
   id: string
 ): Promise<Brand> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("brand")
     .delete()

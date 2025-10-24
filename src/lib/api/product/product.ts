@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type Product = Database["public"]["Tables"]["product"]["Row"];
 export type ProductCreate  = Database["public"]["Tables"]["product"]["Insert"];
@@ -8,6 +10,8 @@ export type ProductUpdate = Database["public"]["Tables"]["product"]["Update"];
 export async function createProduct(
   product: ProductCreate
 ): Promise<Product> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product")
     .insert([product])
@@ -24,6 +28,8 @@ export async function createProduct(
 export async function getProductById(
   id: string
 ): Promise<Product> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product")
     .select("*")
@@ -41,6 +47,8 @@ export async function updateProduct(
   id: string,
   updates: ProductUpdate
 ): Promise<Product> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product")
     .update(updates)
@@ -58,6 +66,8 @@ export async function updateProduct(
 export async function deleteProduct(
   id: string
 ): Promise<Product> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("product")
     .delete()

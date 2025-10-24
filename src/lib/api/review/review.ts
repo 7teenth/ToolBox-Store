@@ -1,11 +1,15 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type Review = Database["public"]["Tables"]["review"]["Row"];
 export type ReviewCreate  = Database["public"]["Tables"]["review"]["Insert"];
 export type ReviewUpdate = Database["public"]["Tables"]["review"]["Update"];
 
 export async function createReview(review: ReviewCreate): Promise<Review> {
+  const supabase = await createClient();
+
   const {
     data,
     error,
@@ -23,6 +27,8 @@ export async function createReview(review: ReviewCreate): Promise<Review> {
 }
 
 export async function getReviewById(id: string): Promise<Review> {
+  const supabase = await createClient();
+
   const {
     data,
     error,
@@ -40,6 +46,8 @@ export async function getReviewById(id: string): Promise<Review> {
 }
 
 export async function updateReview(id: string, updates: ReviewUpdate): Promise<Review> {
+  const supabase = await createClient();
+
   const {
     data,
     error,
@@ -58,6 +66,8 @@ export async function updateReview(id: string, updates: ReviewUpdate): Promise<R
 }
 
 export async function deleteReview(id: string): Promise<Review> {
+  const supabase = await createClient();
+
   const {
     data,
     error,

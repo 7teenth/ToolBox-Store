@@ -1,11 +1,15 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "../../../supabase/types/database.types";
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "../../../../supabase/types/database.types";
 
 export type Order = Database["public"]["Tables"]["order"]["Row"];
 export type OrderCreate  = Database["public"]["Tables"]["order"]["Insert"];
 export type OrderUpdate = Database["public"]["Tables"]["order"]["Update"];
 
 export async function createOrder(order: OrderCreate): Promise<Order> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order")
     .insert([order])
@@ -20,6 +24,8 @@ export async function createOrder(order: OrderCreate): Promise<Order> {
 }
 
 export async function getOrderById(id: string): Promise<Order> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order")
     .select("*")
@@ -34,6 +40,8 @@ export async function getOrderById(id: string): Promise<Order> {
 }
 
 export async function updateOrder(id: string, updates: OrderUpdate): Promise<Order> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order")
     .update(updates)
@@ -49,6 +57,8 @@ export async function updateOrder(id: string, updates: OrderUpdate): Promise<Ord
 }
 
 export async function deleteOrder(id: string): Promise<Order> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from("order")
     .delete()
