@@ -1,4 +1,3 @@
-import "../styles/globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { CompareProvider } from "@/context/CompareContext";
 import { Toaster } from "react-hot-toast";
