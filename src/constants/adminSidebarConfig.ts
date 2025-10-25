@@ -47,15 +47,16 @@ export const adminSidebarConfig = [
         items: [
           {
             title: "Саб1",
-            url: "#",
+            url: "/admin/orders/sub"
           },
           {
             title: "Саб2",
-            url: "#",
+            url: "/admin/orders/sub"
+
           },
           {
             title: "Саб3",
-            url: "#",
+            url: "/admin/orders/sub"
           }
         ]
       },

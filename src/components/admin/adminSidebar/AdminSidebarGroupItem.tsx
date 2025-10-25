@@ -42,7 +42,7 @@ export const AdminSidebarGroupItem = ({ item }: { item: IAdminSidebarGroupItem }
               <SidebarMenuSub>
                 {item.items.map((subItem) => (
                   <SidebarMenuSubItem key={subItem.title}>
-                    <Link href={item.url}>
+                    <Link href={subItem.url}>
                       <SidebarMenuSubButton asChild>
                         <span>{subItem.title}</span>
                       </SidebarMenuSubButton>
