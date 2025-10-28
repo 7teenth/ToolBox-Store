@@ -1,12 +1,12 @@
+import Providers from "@/app/providers";
 import React from "react";
 import './globals.css';
 
-
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html>
+    <html lang="uk" suppressHydrationWarning>
       <body>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

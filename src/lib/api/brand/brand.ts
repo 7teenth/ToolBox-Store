@@ -25,6 +25,20 @@ export async function createBrand(
   return data;
 }
 
+export async function getBrands(): Promise<Brand[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("brand")
+    .select("*");
+
+  if (error) {
+    throw new Error(`Failed to fetch brands: ${error.message}`);
+  }
+
+  return data;
+}
+
 export async function getBrandById(
   id: string
 ): Promise<Brand> {
