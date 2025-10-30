@@ -1,9 +1,9 @@
 'use client'
 
-import { AdminDialog } from "@/components/admin/adminPage/AdminDialog";
-import { AdminPageHeader } from "@/components/admin/adminPage/AdminPageHeader";
-import { AdminTable } from "@/components/admin/adminPage/AdminTable";
-import { AdminTableActions } from "@/components/admin/adminPage/AdminTableActions";
+import { AdminDialog } from "@/components/admin/AdminDialog";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminTable } from "@/components/admin/adminTable/AdminTable";
+import { AdminTableActions } from "@/components/admin/adminTable/AdminTableActions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Brand, getBrands } from "@/lib/api/brand";
