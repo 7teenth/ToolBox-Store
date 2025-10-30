@@ -1,4 +1,4 @@
-import { AdminPageHeader } from "@/components/admin/adminPage/AdminPageHeader";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingDown } from "lucide-react";
 
