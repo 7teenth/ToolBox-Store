@@ -95,3 +95,21 @@ export async function deleteBrand(
 
   return data;
 }
+
+export async function deleteBrandBulk(
+  ids: string[]
+): Promise<Brand[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("brand")
+    .delete()
+    .in("id", ids)
+    .select("*")
+
+  if (error) {
+    throw new Error(`Failed to delete brand: ${error.message}`);
+  }
+
+  return data;
+}

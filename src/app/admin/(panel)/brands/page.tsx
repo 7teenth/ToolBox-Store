@@ -1,121 +1,69 @@
 'use client'
 
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { AdminDialog } from "@/components/admin/AdminDialog";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/adminTable/AdminTable";
-import { AdminTableActions } from "@/components/admin/adminTable/AdminTableActions";
+import { getBrandColumns } from "@/components/admin/adminTable/columns/brandColumns";
+import { BrandAddEditForm } from "@/components/admin/BrandAddEditForm";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Brand, getBrands } from "@/lib/api/brand";
+import useConfirm from "@/hooks/use-confirm";
+import { BrandCreate, deleteBrand, getBrands } from "@/lib/api/brand";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ColumnDef
-} from "@tanstack/react-table";
-import { Eye, Pen, RefreshCcw, Trash } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { useState } from "react";
-
-
-export const columns: ColumnDef<Brand>[] = [
-  {
-    id: "select",
-    size: 40,
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "image_url",
-    header: "Зображення",
-    size: 350,
-    cell: ({ row }) => (
-      <div>{row.getValue("image_url")}</div>
-    ),
-  },
-  {
-    accessorKey: "name",
-    header: "Назва",
-    size: 1100,
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium">{row.original.name}</div>
-        <div className="text-muted-foreground">{row.original.slug}</div>
-      </div>
-    )
-  },
-  {
-    accessorKey: "created_at",
-    size: 200,
-    header: () => <div className="">Дата створення</div>,
-    cell: ({ row }) => {
-      const formatDate = (value?: string | null) => {
-        if (!value) return "-";
-        return new Date(value).toLocaleString("uk-UA");
-      }
-
-      return (
-        <div className="">
-          <div className="font-medium">{formatDate(row.original.created_at)}</div>
-          <div className="text-muted-foreground">Оновлено: {formatDate(row.original.updated_at)}</div>
-        </div>
-      );
-    },
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    size: 50,
-    header: ({ table }) => {
-      if (!table.getIsSomeRowsSelected()) return null;
-
-      return (
-        <div className="justify-self-end">
-          <AdminTableActions
-            title="Дії"
-            actions={[{ title: "Видалити", icon: <Trash className="h-4 w-4 text-red-600" /> }]}
-          />
-        </div>
-      )
-    },
-    cell: ({ row }) => {
-      return (
-        <div className="justify-self-end">
-          <AdminTableActions
-            title="Дії"
-            actions={[
-              { title: "Переглянути", icon: <Eye className="h-4 w-4" /> },
-              { title: "Редагувати", icon: <Pen className="h-4 w-4" /> },
-              { title: "Видалити", icon: <Trash className="h-4 w-4 text-red-600" /> },
-            ]}
-          />
-        </div>
-      )
-    },
-  },
-]
+import { toast } from "sonner";
 
 
 export default function AdminBrands() {
+  const [ConfirmationDialog, confirmDelete] = useConfirm({
+    Dialog: AdminConfirmDialog,
+    title: 'Видалення бренду',
+    description: 'Ви впевнені, що хочете видалити бренд?',
+  })
+
   const [dialog, setDialog] = useState<'add' | 'edit' | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<BrandCreate | null>(null);
 
   const { data = [], isFetching, refetch } = useQuery({
     queryKey: ["brands"],
     queryFn: () => getBrands(),
+  });
+
+  const handleCompleteForm = () => {
+    setDialog(null);
+    refetch();
+  }
+
+  const handleEdit = (id: string) => {
+    const selected = data.find((brand) => brand.id === id);
+    if (selected) {
+      setDialog('edit');
+      setSelectedBrand(selected);
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const confirm = await confirmDelete();
+      if (!confirm) return;
+
+      const response = await deleteBrand(id);
+      if (response) {
+        toast.success('Бренд успішно видалено');
+        refetch();
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error('Помилка видалення бренду');
+    }
+  }
+
+  const columns = getBrandColumns({
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+    onDeleteBulk: (ids) => { }
   });
 
   return (
@@ -126,11 +74,21 @@ export default function AdminBrands() {
           <Button size="icon" onClick={() => refetch()}><RefreshCcw /></Button>
           <Button onClick={() => setDialog('add')}>Додати бренд</Button>
         </div>
-        <AdminTable data={data} columns={columns} isLoading={isFetching} />
+        <AdminTable
+          data={data}
+          columns={columns}
+          isLoading={isFetching}
+        />
       </div>
-      <AdminDialog open={!!dialog} onOpenChange={() => setDialog(null)} title="Заголовок" description="Опис">
-        text
+      <AdminDialog
+        open={!!dialog}
+        onOpenChange={() => setDialog(null)}
+        title={`${dialog === 'add' ? 'Додати' : 'Редагувати'} бренд`}
+        className="max-w-xl"
+      >
+        <BrandAddEditForm type={dialog} selectedBrand={selectedBrand} onComplete={handleCompleteForm} onCancel={() => setDialog(null)} />
       </AdminDialog>
+      <ConfirmationDialog />
     </div>
   );
 }
