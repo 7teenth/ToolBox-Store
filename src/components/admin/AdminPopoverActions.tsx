@@ -8,19 +8,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 
-interface AdminTableActionsProps {
+interface AdminPopoverActionsProps {
   title?: string
   actions?: { title: string, icon: React.ReactNode, onClick?: () => void }[]
+  trigger?: React.ReactNode
 }
 
 
-export const AdminTableActions = ({ title, actions = [] }: AdminTableActionsProps) => {
+export const AdminPopoverActions = ({ title, actions = [], trigger }: AdminPopoverActionsProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0 ">
-          <MoreHorizontal />
-        </Button>
+        {
+          trigger || (
+            <Button variant="secondary" className="h-8 w-8 p-0 ">
+              <MoreHorizontal />
+            </Button>
+          )
+        }
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {title && <DropdownMenuLabel>{title}</DropdownMenuLabel>}

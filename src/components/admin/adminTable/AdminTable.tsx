@@ -44,9 +44,9 @@ export function AdminTable<T>({ columns, data, isLoading = false }: AdminTablePr
     () =>
       isLoading
         ? columns.map((column) => ({
-            ...column,
-            cell: () => <Skeleton className="h-10" />,
-          }))
+          ...column,
+          cell: () => <Skeleton className="h-10" />,
+        }))
         : columns,
     [isLoading, columns]
   );
@@ -54,7 +54,7 @@ export function AdminTable<T>({ columns, data, isLoading = false }: AdminTablePr
 
   const table = useReactTable({
     data: tableData,
-    columns:tableColumns,
+    columns: tableColumns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -71,7 +71,7 @@ export function AdminTable<T>({ columns, data, isLoading = false }: AdminTablePr
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="overflow-hidden rounded-md border flex-1">
+      <div className="overflow-y-auto rounded-md border flex-1">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
