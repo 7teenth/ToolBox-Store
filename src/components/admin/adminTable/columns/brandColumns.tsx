@@ -47,7 +47,7 @@ export const getBrandColumns = ({ onEdit, onDelete, onDeleteBulk }: Params): Col
 
       return (
         <Avatar className="h-16 w-16 rounded-md" >
-          <AvatarImage src={imageUrl} />
+          <AvatarImage src={imageUrl} className="object-cover"/>
           <AvatarFallback className="rounded-md">{row.original.name}</AvatarFallback>
         </Avatar>
       )
