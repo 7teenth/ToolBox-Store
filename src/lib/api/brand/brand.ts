@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server";
+import { Pagination, PaginationParams } from "@/lib/types";
+import { getPaginatedData } from "@/lib/utils/index";
 import type { Database } from "../../../../supabase/types/database.types";
 
 export type Brand = Database["public"]["Tables"]["brand"]["Row"];
@@ -25,18 +27,19 @@ export async function createBrand(
   return data;
 }
 
-export async function getBrands(): Promise<Brand[]> {
+export async function getBrands({ pageIndex = 0, pageSize = 10 }: PaginationParams): Promise<Pagination<Brand>> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data, count, error } = await supabase
     .from("brand")
-    .select("*");
+    .select("*", { count: 'exact' })
+    .range(pageIndex * pageSize, (pageIndex + 1) * pageSize - 1);
 
   if (error) {
     throw new Error(`Failed to fetch brands: ${error.message}`);
   }
 
-  return data;
+  return getPaginatedData(data, count, pageIndex, pageSize);
 }
 
 export async function getBrandById(

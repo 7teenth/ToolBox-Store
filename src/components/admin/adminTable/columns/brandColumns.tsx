@@ -95,8 +95,10 @@ export const getBrandColumns = ({ onEdit, onDelete, onDeleteBulk }: Params): Col
     enableHiding: false,
     size: 50,
     header: ({ table }) => {
-      if (!table.getIsSomeRowsSelected()) return null;
-      const selectedIds = table.getSelectedRowModel().rows.map(row => row.original.id);
+      if (!table.getIsAllPageRowsSelected() && !table.getIsSomeRowsSelected()) return null;
+      const selectedIds = Object.entries(table.getState().rowSelection)
+        .filter(([_, selected]) => selected)
+        .map(([id]) => id);
 
       return (
         <div className="justify-self-end">

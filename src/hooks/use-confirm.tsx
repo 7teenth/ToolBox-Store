@@ -19,13 +19,25 @@ type PromiseHandlers = {
   reject: (reason?: unknown) => void;
 };
 
+type ConfirmFunctionArgs = {
+  title?: string;
+  description?: string;
+};
+
 const useConfirm = ({ Dialog, title, description }: UseConfirmProps) => {
   const [promise, setPromise] = useState<PromiseHandlers | null>(null);
+  const [titleDialog, setTitleDialog] = useState(title);
+  const [descriptionDialog, setDescriptionDialog] = useState(description);
 
-  const confirm = () =>
-    new Promise<boolean>((resolve, reject) => {
+  const confirm = ({ title, description } : ConfirmFunctionArgs = {}) => {
+    if (title) setTitleDialog(title);
+    if (description) setDescriptionDialog(description);
+
+    return new Promise<boolean>((resolve, reject) => {
       setPromise({ resolve, reject });
     });
+  }
+
 
   const handleClose = () => {
     setPromise(null);
@@ -44,8 +56,8 @@ const useConfirm = ({ Dialog, title, description }: UseConfirmProps) => {
   const ConfirmationDialog = () => (
     <Dialog
       open={promise !== null}
-      title={title}
-      description={description}
+      title={titleDialog}
+      description={descriptionDialog}
       onConfirm={handleConfirm}
       onCancel={handleCancel}
     />

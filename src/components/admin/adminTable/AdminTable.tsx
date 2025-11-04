@@ -18,6 +18,9 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  OnChangeFn,
+  PaginationState,
+  RowSelectionState,
   SortingState,
   useReactTable
 } from "@tanstack/react-table"
@@ -27,14 +30,27 @@ interface AdminTableProps<T> {
   data: T[],
   columns: ColumnDef<T, any>[]
   isLoading?: boolean
+  pageCount: number
+  pagination: PaginationState
+  setPagination: OnChangeFn<PaginationState>
+  rowSelection: RowSelectionState
+  setRowSelection: OnChangeFn<RowSelectionState>
 }
 
-export function AdminTable<T>({ columns, data, isLoading = false }: AdminTableProps<T>) {
+export function AdminTable<T>({
+  columns,
+  data,
+  isLoading = false,
+  pageCount,
+  pagination,
+  setPagination,
+  rowSelection,
+  setRowSelection
+}: AdminTableProps<T>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
-  const [rowSelection, setRowSelection] = React.useState({})
 
   const tableData = React.useMemo(
     () => (isLoading ? Array(10).fill({}) : data),
@@ -55,6 +71,9 @@ export function AdminTable<T>({ columns, data, isLoading = false }: AdminTablePr
   const table = useReactTable({
     data: tableData,
     columns: tableColumns,
+    pageCount,
+    getRowId: (row) => row.id,
+    onPaginationChange: setPagination,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -63,10 +82,12 @@ export function AdminTable<T>({ columns, data, isLoading = false }: AdminTablePr
     getFilteredRowModel: getFilteredRowModel(),
     onRowSelectionChange: setRowSelection,
     state: {
+      pagination,
       sorting,
       columnFilters,
       rowSelection,
     },
+    manualPagination: true
   })
 
   return (

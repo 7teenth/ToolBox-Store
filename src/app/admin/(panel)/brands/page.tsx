@@ -8,7 +8,8 @@ import { getBrandColumns } from "@/components/admin/adminTable/columns/brandColu
 import { BrandAddEditForm } from "@/components/admin/BrandAddEditForm";
 import { Button } from "@/components/ui/button";
 import useConfirm from "@/hooks/use-confirm";
-import { BrandCreate, deleteBrand, getBrands } from "@/lib/api/brand";
+import { Brand, BrandCreate, deleteBrand, deleteBrandBulk, getBrands } from "@/lib/api/brand";
+import { Pagination } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCcw } from "lucide-react";
 import { useState } from "react";
@@ -25,9 +26,12 @@ export default function AdminBrands() {
   const [dialog, setDialog] = useState<'add' | 'edit' | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<BrandCreate | null>(null);
 
-  const { data = [], isFetching, refetch } = useQuery({
-    queryKey: ["brands"],
-    queryFn: () => getBrands(),
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 7 });
+  const [rowSelection, setRowSelection] = useState({})
+
+  const { data: brands, isFetching, refetch } = useQuery<Pagination<Brand>>({
+    queryKey: ["brands", pagination],
+    queryFn: () => getBrands(pagination)
   });
 
   const handleCompleteForm = () => {
@@ -36,7 +40,7 @@ export default function AdminBrands() {
   }
 
   const handleEdit = (id: string) => {
-    const selected = data.find((brand) => brand.id === id);
+    const selected = brands?.data.find((brand) => brand.id === id);
     if (selected) {
       setDialog('edit');
       setSelectedBrand(selected);
@@ -60,10 +64,38 @@ export default function AdminBrands() {
     }
   }
 
+  const handleDeleteBulk = async (ids: string[]) => {
+    try {
+      if (ids.length === 0) return;
+
+      const brandNames = brands?.data
+        .filter((brand) => ids.includes(brand.id))
+        .map((brand) => brand.name)
+        .join(', ');
+
+      const confirm = await confirmDelete({
+        title: 'Видалення брендів',
+        description: `Ви впевнені, що хочете видалити ці бренди?`,
+      });
+      if (!confirm) return;
+
+      const response = await deleteBrandBulk(ids);
+      if (response) {
+        toast.success('Бренди успішно видалено');
+        setRowSelection({});
+        refetch();
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error('Помилка видалення брендів');
+    }
+  }
+
   const columns = getBrandColumns({
     onEdit: handleEdit,
     onDelete: handleDelete,
-    onDeleteBulk: (ids) => { }
+    onDeleteBulk: handleDeleteBulk
   });
 
   return (
@@ -75,9 +107,14 @@ export default function AdminBrands() {
           <Button onClick={() => setDialog('add')}>Додати бренд</Button>
         </div>
         <AdminTable
-          data={data}
+          data={brands?.data || []}
           columns={columns}
           isLoading={isFetching}
+          pageCount={brands?.totalPages || 0}
+          pagination={pagination}
+          setPagination={setPagination}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
         />
       </div>
       <AdminDialog
